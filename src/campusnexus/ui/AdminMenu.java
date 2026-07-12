@@ -12,8 +12,10 @@ import campusnexus.service.InputValidator;
 import campusnexus.util.ActivityLogger;
 
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Scanner;
 import java.util.Set;
@@ -201,13 +203,16 @@ public class AdminMenu implements DashboardMenu {
             List<Student> students = userDAO.findAllStudents();
             List<Teacher> teachers = userDAO.findAllTeachers();
 
-            // Collections demo: HashSet for distinct branches, PriorityQueue to rank by year
+            // Collections demo: HashSet for distinct branches, HashMap tallying students per
+            // branch, PriorityQueue to rank by year
             Set<String> distinctBranches = new HashSet<>();
+            Map<String, Integer> branchCounts = new HashMap<>();
             PriorityQueue<Student> byYearDesc = new PriorityQueue<>(
                     (a, b) -> Integer.compare(b.getYear(), a.getYear())
             );
             for (Student s : students) {
                 distinctBranches.add(s.getBranch());
+                branchCounts.merge(s.getBranch(), 1, Integer::sum);
                 byYearDesc.add(s);
             }
 
@@ -216,6 +221,7 @@ public class AdminMenu implements DashboardMenu {
             System.out.println("Total students: " + students.size());
             System.out.println("Total teachers: " + teachers.size());
             System.out.println("Branches represented: " + distinctBranches);
+            System.out.println("Students per branch: " + branchCounts);
 
             System.out.println();
             System.out.println("-- Students (senior year first) --");

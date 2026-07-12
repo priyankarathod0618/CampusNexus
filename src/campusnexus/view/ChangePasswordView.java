@@ -1,5 +1,6 @@
 package campusnexus.view;
 
+import campusnexus.exception.WeakPasswordException;
 import campusnexus.model.Person;
 import campusnexus.model.Student;
 import campusnexus.model.Teacher;
@@ -43,10 +44,6 @@ public class ChangePasswordView {
             String pw = newPassword.getText().trim();
             String confirm = confirmPassword.getText().trim();
 
-            if (pw.length() < 4) {
-                error.setText("Password must be at least 4 characters.");
-                return;
-            }
             if (!pw.equals(confirm)) {
                 error.setText("Passwords do not match.");
                 return;
@@ -62,6 +59,8 @@ public class ChangePasswordView {
                 } else if (person instanceof Teacher teacher) {
                     TeacherDashboardView.show(teacher);
                 }
+            } catch (WeakPasswordException ex) {
+                error.setText(ex.getMessage());
             } catch (SQLException ex) {
                 error.setText("Could not update password: " + ex.getMessage());
             }

@@ -31,11 +31,13 @@ public class Theme {
         return b;
     }
 
+    // Used on light page backgrounds (Welcome, Login, etc.) - dark text, not the near-white
+    // LIGHT_TEXT used by sidebarButton() for the dark navy sidebar.
     public static Button secondaryButton(String text) {
         Button b = new Button(text);
-        b.setStyle("-fx-background-color: transparent; -fx-text-fill: " + LIGHT_TEXT + "; "
-                + "-fx-border-color: " + MUTED_TEXT + "; -fx-border-radius: 6; -fx-background-radius: 6; "
-                + "-fx-padding: 8 18; -fx-cursor: hand;");
+        b.setStyle("-fx-background-color: transparent; -fx-text-fill: " + DARK_TEXT + "; "
+                + "-fx-border-color: #B7BEC9; -fx-border-radius: 6; -fx-background-radius: 6; "
+                + "-fx-padding: 8 18; -fx-cursor: hand; -fx-font-weight: bold;");
         return b;
     }
 

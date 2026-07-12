@@ -22,6 +22,7 @@ public class TeacherDashboardView {
     private static final AnnouncementDAO announcementDAO = new AnnouncementDAO();
     private static final QuestionDAO questionDAO = new QuestionDAO();
     private static final HostelComplaintDAO hostelComplaintDAO = new HostelComplaintDAO();
+    private static final AnalyticsDAO analyticsDAO = new AnalyticsDAO();
 
     private static Teacher teacher;
     private static BorderPane root;
@@ -56,6 +57,7 @@ public class TeacherDashboardView {
         var uploadBtn = Theme.sidebarButton("Upload Resource");
         var announceBtn = Theme.sidebarButton("Post Announcement");
         var questionsBtn = Theme.sidebarButton("Answer Questions");
+        var analyticsBtn = Theme.sidebarButton("Basic Analytics");
         var logoutBtn = Theme.sidebarButton("Logout");
 
         profileBtn.setOnAction(e -> showProfile());
@@ -65,11 +67,60 @@ public class TeacherDashboardView {
         uploadBtn.setOnAction(e -> showUploadResource());
         announceBtn.setOnAction(e -> showPostAnnouncement());
         questionsBtn.setOnAction(e -> showAnswerQuestions());
+        analyticsBtn.setOnAction(e -> showAnalytics());
         logoutBtn.setOnAction(e -> WelcomeView.show());
 
         sidebar.getChildren().addAll(header, profileBtn, studentsBtn, reportBtn, resolveBtn,
-                uploadBtn, announceBtn, questionsBtn, new Separator(), logoutBtn);
+                uploadBtn, announceBtn, questionsBtn, analyticsBtn, new Separator(), logoutBtn);
         return sidebar;
+    }
+
+    private static void showAnalytics() {
+        VBox content = contentWrapper("Basic Analytics");
+        ScrollPane scroll = new ScrollPane();
+        scroll.setFitToWidth(true);
+        scroll.setStyle("-fx-background-color: transparent;");
+
+        VBox sections = new VBox(20);
+        sections.setPadding(new Insets(4));
+
+        try {
+            VBox statsCard = Theme.card();
+            statsCard.getChildren().add(Theme.sectionHeading("Overall Stats"));
+            analyticsDAO.getOverallStats().forEach((label, value) ->
+                    statsCard.getChildren().add(new Label(label + ": " + value)));
+            sections.getChildren().add(statsCard);
+
+            sections.getChildren().add(analyticsListCard("Popular Events (GROUP BY + HAVING)",
+                    analyticsDAO.getPopularEvents()));
+            sections.getChildren().add(analyticsListCard("Colleges & Student Counts (RIGHT JOIN)",
+                    analyticsDAO.getCollegesWithStudentCounts()));
+            sections.getChildren().add(analyticsListCard("Students Needing Follow-up (UNION)",
+                    analyticsDAO.getStudentsNeedingFollowUp()));
+            sections.getChildren().add(analyticsListCard("College/Teacher Full Overview (FULL JOIN emulation)",
+                    analyticsDAO.getCollegeTeacherFullOverview()));
+
+        } catch (SQLException e) {
+            sections.getChildren().add(new Label("Error loading analytics: " + e.getMessage()));
+        }
+
+        scroll.setContent(sections);
+        VBox.setVgrow(scroll, Priority.ALWAYS);
+        content.getChildren().add(scroll);
+        setContent(content);
+    }
+
+    private static VBox analyticsListCard(String heading, List<String> lines) {
+        VBox card = Theme.card();
+        card.getChildren().add(Theme.sectionHeading(heading));
+        if (lines.isEmpty()) {
+            card.getChildren().add(new Label("(nothing to show)"));
+        } else {
+            for (String line : lines) {
+                card.getChildren().add(new Label(line));
+            }
+        }
+        return card;
     }
 
     private static VBox contentWrapper(String heading) {

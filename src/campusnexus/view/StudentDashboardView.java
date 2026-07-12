@@ -107,15 +107,39 @@ public class StudentDashboardView {
     private static void showEvents() {
         VBox content = contentWrapper("Upcoming Events");
         ListView<String> list = new ListView<>();
-        List<Event> events;
-        try {
-            events = eventDAO.findUpcoming();
-            for (Event ev : events) {
-                list.getItems().add(ev.getId() + " | " + ev.getTitle() + " - " + ev.getEventDate() + " @ " + ev.getVenue());
+
+        Runnable loadUpcoming = () -> {
+            list.getItems().clear();
+            try {
+                for (Event ev : eventDAO.findUpcoming()) {
+                    list.getItems().add(formatEvent(ev));
+                }
+            } catch (SQLException e) {
+                list.getItems().add("Error loading events: " + e.getMessage());
             }
-        } catch (SQLException e) {
-            list.getItems().add("Error loading events: " + e.getMessage());
-        }
+        };
+        loadUpcoming.run();
+
+        TextField startField = new TextField();
+        startField.setPromptText("Start date (YYYY-MM-DD)");
+        TextField endField = new TextField();
+        endField.setPromptText("End date (YYYY-MM-DD)");
+        var searchBtn = Theme.secondaryButton("Search Between Dates");
+        var allBtn = Theme.secondaryButton("Show All Upcoming");
+
+        searchBtn.setOnAction(e -> {
+            try {
+                java.time.LocalDate start = java.time.LocalDate.parse(startField.getText().trim());
+                java.time.LocalDate end = java.time.LocalDate.parse(endField.getText().trim());
+                list.getItems().clear();
+                for (Event ev : eventDAO.findBetweenDates(start, end)) {
+                    list.getItems().add(formatEvent(ev));
+                }
+            } catch (Exception ex) {
+                list.getItems().setAll("Invalid dates or database error: " + ex.getMessage());
+            }
+        });
+        allBtn.setOnAction(e -> loadUpcoming.run());
 
         TextField eventIdField = new TextField();
         eventIdField.setPromptText("Event ID to register");
@@ -130,14 +154,22 @@ public class StudentDashboardView {
                 status.setText("Registered! A confirmation notification was sent.");
             } catch (NumberFormatException ex) {
                 status.setText("Enter a valid event ID.");
+            } catch (campusnexus.exception.EventFullException ex) {
+                status.setText(ex.getMessage());
             } catch (SQLException ex) {
                 status.setText("Could not register (rolled back): " + ex.getMessage());
             }
         });
 
         VBox.setVgrow(list, Priority.ALWAYS);
-        content.getChildren().addAll(list, new HBox(10, eventIdField, registerBtn), status);
+        content.getChildren().addAll(list, new HBox(10, startField, endField, searchBtn, allBtn),
+                new HBox(10, eventIdField, registerBtn), status);
         setContent(content);
+    }
+
+    private static String formatEvent(Event ev) {
+        return ev.getId() + " | " + ev.getTitle() + " - " + ev.getEventDate() + " @ " + ev.getVenue()
+                + " (" + ev.getRegisteredCount() + "/" + ev.getCapacity() + " seats)" + (ev.isFull() ? " [FULL]" : "");
     }
 
     // ---------------- Notifications & Announcements ----------------

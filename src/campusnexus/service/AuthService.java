@@ -3,11 +3,13 @@ package campusnexus.service;
 import campusnexus.dao.UserDAO;
 import campusnexus.exception.AccountNotFoundException;
 import campusnexus.exception.InvalidCredentialsException;
+import campusnexus.exception.WeakPasswordException;
 import campusnexus.model.Person;
 
 import java.sql.SQLException;
 
 public class AuthService {
+    private static final int MIN_PASSWORD_LENGTH = 4;
     private final UserDAO userDAO = new UserDAO();
 
     public Person login(String email, String password)
@@ -24,7 +26,10 @@ public class AuthService {
         return person;
     }
 
-    public void changePassword(int userId, String newPassword) throws SQLException {
+    public void changePassword(int userId, String newPassword) throws WeakPasswordException, SQLException {
+        if (newPassword == null || newPassword.length() < MIN_PASSWORD_LENGTH) {
+            throw new WeakPasswordException("Password must be at least " + MIN_PASSWORD_LENGTH + " characters.");
+        }
         userDAO.updatePassword(userId, newPassword);
     }
 }
