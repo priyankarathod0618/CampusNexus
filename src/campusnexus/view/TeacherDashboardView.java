@@ -58,6 +58,7 @@ public class TeacherDashboardView {
         var announceBtn = Theme.sidebarButton("Post Announcement");
         var questionsBtn = Theme.sidebarButton("Answer Questions");
         var analyticsBtn = Theme.sidebarButton("Basic Analytics");
+        var exportBtn = Theme.sidebarButton("Export Reports");
         var logoutBtn = Theme.sidebarButton("Logout");
 
         profileBtn.setOnAction(e -> showProfile());
@@ -68,11 +69,41 @@ public class TeacherDashboardView {
         announceBtn.setOnAction(e -> showPostAnnouncement());
         questionsBtn.setOnAction(e -> showAnswerQuestions());
         analyticsBtn.setOnAction(e -> showAnalytics());
+        exportBtn.setOnAction(e -> showExportReports());
         logoutBtn.setOnAction(e -> WelcomeView.show());
 
         sidebar.getChildren().addAll(header, profileBtn, studentsBtn, reportBtn, resolveBtn,
-                uploadBtn, announceBtn, questionsBtn, analyticsBtn, new Separator(), logoutBtn);
+                uploadBtn, announceBtn, questionsBtn, analyticsBtn, exportBtn, new Separator(), logoutBtn);
         return sidebar;
+    }
+
+    private static void showExportReports() {
+        VBox content = contentWrapper("Export Reports to File");
+        Label subtitle = Theme.subtitle("Writes .txt files into a 'reports' folder next to wherever the app is run from.");
+        subtitle.setWrapText(true);
+
+        ListView<String> results = new ListView<>();
+        var exportBtn = Theme.primaryButton("Export All Reports Now");
+
+        exportBtn.setOnAction(e -> {
+            results.getItems().clear();
+            try {
+                results.getItems().add(campusnexus.util.ReportExportService.exportComplaintReport(
+                        reportDAO.unresolvedComplaintsByHostelBlock()));
+                results.getItems().add(campusnexus.util.ReportExportService.exportStudentDirectory(
+                        userDAO.findStudentDirectoryFromView()));
+                results.getItems().add(campusnexus.util.ReportExportService.exportFollowUpList(
+                        analyticsDAO.getStudentsNeedingFollowUp()));
+            } catch (java.io.IOException ex) {
+                results.getItems().add("Could not write file: " + ex.getMessage());
+            } catch (SQLException ex) {
+                results.getItems().add("Database error: " + ex.getMessage());
+            }
+        });
+
+        VBox.setVgrow(results, Priority.ALWAYS);
+        content.getChildren().addAll(subtitle, exportBtn, results);
+        setContent(content);
     }
 
     private static void showAnalytics() {

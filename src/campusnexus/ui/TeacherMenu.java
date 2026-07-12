@@ -48,6 +48,7 @@ public class TeacherMenu implements DashboardMenu {
                 case "6" -> answerQuestions();
                 case "7" -> resolveComplaint();
                 case "8" -> basicAnalytics();
+                case "9" -> exportReports();
                 case "0" -> {
                     System.out.println("Logging out...");
                     logout = true;
@@ -95,6 +96,7 @@ public class TeacherMenu implements DashboardMenu {
         System.out.println("6. Answer Student Questions");
         System.out.println("7. Resolve Hostel Complaint");
         System.out.println("8. Basic Analytics");
+        System.out.println("9. Export Reports to File");
         System.out.println("0. Logout");
         System.out.print("Choose an option: ");
     }
@@ -280,6 +282,28 @@ public class TeacherMenu implements DashboardMenu {
 
         } catch (SQLException e) {
             System.out.println("Could not generate analytics: " + e.getMessage());
+        }
+    }
+
+    private void exportReports() {
+        try {
+            String path1 = campusnexus.util.ReportExportService.exportComplaintReport(
+                    reportDAO.unresolvedComplaintsByHostelBlock());
+            String path2 = campusnexus.util.ReportExportService.exportStudentDirectory(
+                    userDAO.findStudentDirectoryFromView());
+            String path3 = campusnexus.util.ReportExportService.exportFollowUpList(
+                    analyticsDAO.getStudentsNeedingFollowUp());
+
+            System.out.println();
+            System.out.println("Reports exported:");
+            System.out.println("- " + path1);
+            System.out.println("- " + path2);
+            System.out.println("- " + path3);
+
+        } catch (java.io.IOException e) {
+            System.out.println("Could not write report file: " + e.getMessage());
+        } catch (SQLException e) {
+            System.out.println("Database error: " + e.getMessage());
         }
     }
 }
