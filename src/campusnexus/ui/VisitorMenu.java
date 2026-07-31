@@ -60,27 +60,61 @@ public class VisitorMenu implements DashboardMenu {
     private void searchByCity() {
         System.out.print("Enter city name: ");
         String city = scanner.nextLine().trim();
-        showColleges(collegeDAO.searchByCity(city));
+
+        List<College> colleges = collegeDAO.searchByCity(city);
+
+        if (colleges.isEmpty()) {
+            System.out.println("\nNo colleges found in \"" + city + "\".");
+            return;
+        }
+
+        showColleges(colleges);
     }
 
     private void compareColleges() {
+
         List<College> allColleges = collegeDAO.findAll();
         showColleges(allColleges);
 
-        System.out.println();
-        System.out.print("Enter college IDs to compare, separated by comma: ");
+        System.out.print("\nEnter college IDs to compare (comma separated): ");
+
         String input = scanner.nextLine().trim();
 
         List<Integer> ids = new ArrayList<>();
-        for (String value : input.split(",")) {
+
+        for (String s : input.split(",")) {
             try {
-                ids.add(Integer.parseInt(value.trim()));
+                ids.add(Integer.parseInt(s.trim()));
             } catch (NumberFormatException e) {
-                System.out.println("Skipping invalid college ID: " + value.trim());
+                System.out.println("'" + s + "' is not a valid ID.");
             }
         }
 
-        showColleges(collegeDAO.findByIds(ids));
+        if (ids.size() < 2) {
+            System.out.println("Please enter at least two college IDs.");
+            return;
+        }
+
+        List<College> colleges = collegeDAO.findByIds(ids);
+
+        if (colleges.size() != ids.size()) {
+            System.out.println("One or more college IDs do not exist.");
+            return;
+        }
+
+        System.out.println("\n========== College Comparison ==========");
+
+        for (College c : colleges) {
+            System.out.println("----------------------------------------");
+            System.out.println("Name      : " + c.getName());
+            System.out.println("City      : " + c.getCity());
+            System.out.println("Fees      : ₹" + c.getFees());
+            System.out.println("Rating    : " + formatRating(c.getAverageRating()));
+            System.out.println("Hostel    : " + (c.isHostelAvailable() ? "Yes" : "No"));
+            System.out.println("Facilities: " + c.getFacilities());
+        }
+
+        System.out.println("----------------------------------------");
     }
 
     private void showCoursesInfo() {
@@ -93,7 +127,19 @@ public class VisitorMenu implements DashboardMenu {
     }
 
     private void showFeesAndFacilities() {
-        showColleges(collegeDAO.findAll());
+        List<College> colleges = collegeDAO.findAll();
+
+        System.out.println();
+
+        for (College college : colleges) {
+            System.out.println("----------------------------------------");
+            System.out.println("College: " + college.getName());
+            System.out.println("Fees: ₹" + college.getFees());
+            System.out.println("Hostel: " + (college.isHostelAvailable() ? "Available" : "Not Available"));
+            System.out.println("Facilities: " + college.getFacilities());
+        }
+
+        System.out.println("----------------------------------------");
     }
 
     // Lambda + Predicate demo (Java syllabus topic 1a), sorted with a Comparator lambda
@@ -109,7 +155,10 @@ public class VisitorMenu implements DashboardMenu {
                     .filter(withinBudget)
                     .sorted(Comparator.comparingDouble(College::getFees))
                     .toList();
-
+            if (filtered.isEmpty()) {
+                System.out.println("No colleges found with fees below ₹" + maxFee);
+                return;
+            }
             showColleges(filtered);
         } catch (NumberFormatException e) {
             System.out.println("Invalid fee amount.");

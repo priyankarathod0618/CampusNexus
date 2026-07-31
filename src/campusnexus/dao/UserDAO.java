@@ -200,6 +200,50 @@ public class UserDAO {
         return students;
     }
 
+    public List<Student> findStudentsByCollege(int collegeId) throws SQLException {
+        String sql = """
+            SELECT u.id, u.name, u.email, u.password, u.must_change_password,
+                   sp.roll_number, sp.branch, sp.year, sp.hostel_block,
+                   sp.phone, sp.college_id,
+                   c.name AS college_name
+            FROM users u
+            INNER JOIN student_profiles sp ON u.id = sp.user_id
+            INNER JOIN colleges c ON sp.college_id = c.id
+            WHERE u.role = 'STUDENT'
+              AND sp.college_id = ?
+            ORDER BY u.name
+            """;
+
+        List<Student> students = new ArrayList<>();
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, collegeId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    students.add(new Student(
+                            rs.getInt("id"),
+                            rs.getString("name"),
+                            rs.getString("email"),
+                            rs.getString("password"),
+                            rs.getBoolean("must_change_password"),
+                            rs.getString("roll_number"),
+                            rs.getString("branch"),
+                            rs.getInt("year"),
+                            rs.getString("hostel_block"),
+                            rs.getString("phone"),
+                            rs.getInt("college_id"),
+                            rs.getString("college_name")
+                    ));
+                }
+            }
+        }
+
+        return students;
+    }
+
     public List<Teacher> findAllTeachers() throws SQLException {
         String sql = """
                 SELECT u.id, u.name, u.email, u.password, u.must_change_password,
@@ -226,6 +270,49 @@ public class UserDAO {
                 ));
             }
         }
+        return teachers;
+    }
+
+    public List<Teacher> findTeachersByCollege(int collegeId) throws SQLException {
+        String sql = """
+            SELECT u.id, u.name, u.email, u.password, u.must_change_password,
+                   tp.employee_id, tp.department, tp.subject,
+                   tp.phone, tp.college_id,
+                   c.name AS college_name
+            FROM users u
+            INNER JOIN teacher_profiles tp ON u.id = tp.user_id
+            INNER JOIN colleges c ON tp.college_id = c.id
+            WHERE u.role = 'TEACHER'
+              AND tp.college_id = ?
+            ORDER BY u.name
+            """;
+
+        List<Teacher> teachers = new ArrayList<>();
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, collegeId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    teachers.add(new Teacher(
+                            rs.getInt("id"),
+                            rs.getString("name"),
+                            rs.getString("email"),
+                            rs.getString("password"),
+                            rs.getBoolean("must_change_password"),
+                            rs.getString("employee_id"),
+                            rs.getString("department"),
+                            rs.getString("subject"),
+                            rs.getString("phone"),
+                            rs.getInt("college_id"),
+                            rs.getString("college_name")
+                    ));
+                }
+            }
+        }
+
         return teachers;
     }
 

@@ -129,4 +129,28 @@ public class CollegeDAO {
                 resultSet.getDouble("average_rating")
         );
     }
+    public College findById(int id) {
+        String sql = """
+        SELECT id, name, city, code, email_domain, fees,
+               hostel_available, facilities, 0 AS average_rating
+        FROM colleges
+        WHERE id = ?
+        """;
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapCollege(rs);
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+
+        return null;
+    }
 }
