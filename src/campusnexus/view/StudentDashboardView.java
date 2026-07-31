@@ -3,6 +3,7 @@ package campusnexus.view;
 import campusnexus.dao.*;
 import campusnexus.exception.DuplicateClubMembershipException;
 import campusnexus.model.*;
+import campusnexus.exception.AlreadyRegisteredException;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -158,6 +159,8 @@ public class StudentDashboardView {
                 status.setText(ex.getMessage());
             } catch (SQLException ex) {
                 status.setText("Could not register (rolled back): " + ex.getMessage());
+            } catch (AlreadyRegisteredException ex) {
+                throw new RuntimeException(ex);
             }
         });
 
