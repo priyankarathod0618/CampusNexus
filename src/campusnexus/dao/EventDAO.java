@@ -1,6 +1,7 @@
 package campusnexus.dao;
 
 import campusnexus.config.DatabaseConfig;
+import campusnexus.exception.AlreadyRegisteredException;
 import campusnexus.exception.EventFullException;
 import campusnexus.model.Event;
 
@@ -62,9 +63,19 @@ public class EventDAO {
         return events;
     }
 
-    // Real transaction: check capacity, insert registration + notification atomically,
-    // with a savepoint so a partial failure rolls back cleanly. (Unit 8 topic demo)
-    public void registerStudentForEvent(int eventId, int studentId) throws EventFullException, SQLException {
+    // Real transaction: lock the event row, check capacity, insert registration +
+    // notification atomically, with a savepoint so a partial failure rolls back
+    // cleanly. (Unit 8 topic demo)
+    //
+    // CHANGED: capacity check now uses "SELECT ... FOR UPDATE" so the event row is
+    // locked for the transaction - closes a race where two students registering
+    // for the last seat at the same instant could both pass the capacity check.
+    //
+    // CHANGED: a duplicate registration (same student, same event) used to bubble
+    // up as a raw SQLIntegrityConstraintViolationException; it's now caught and
+    // turned into AlreadyRegisteredException.
+    public void registerStudentForEvent(int eventId, int studentId)
+            throws EventFullException, AlreadyRegisteredException, SQLException {
         Connection conn = null;
         try {
             conn = DatabaseConfig.getConnection();
@@ -72,22 +83,24 @@ public class EventDAO {
             Savepoint savepoint = conn.setSavepoint("beforeRegistration");
 
             try {
-                String capacityCheck = """
-                        SELECT e.capacity, COUNT(er.student_id) AS registered_count
-                        FROM events e
-                        LEFT JOIN event_registrations er ON e.id = er.event_id
-                        WHERE e.id = ?
-                        GROUP BY e.capacity
-                        """;
                 int capacity;
-                int registered;
-                try (PreparedStatement ps = conn.prepareStatement(capacityCheck)) {
+                String capacityLock = "SELECT capacity FROM events WHERE id = ? FOR UPDATE";
+                try (PreparedStatement ps = conn.prepareStatement(capacityLock)) {
                     ps.setInt(1, eventId);
                     try (ResultSet rs = ps.executeQuery()) {
                         if (!rs.next()) {
                             throw new SQLException("Event not found.");
                         }
                         capacity = rs.getInt("capacity");
+                    }
+                }
+
+                int registered;
+                String countCheck = "SELECT COUNT(*) AS registered_count FROM event_registrations WHERE event_id = ?";
+                try (PreparedStatement ps = conn.prepareStatement(countCheck)) {
+                    ps.setInt(1, eventId);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        rs.next();
                         registered = rs.getInt("registered_count");
                     }
                 }
@@ -102,6 +115,9 @@ public class EventDAO {
                     ps.setInt(1, eventId);
                     ps.setInt(2, studentId);
                     ps.executeUpdate();
+                } catch (SQLIntegrityConstraintViolationException dup) {
+                    conn.rollback(savepoint);
+                    throw new AlreadyRegisteredException("You're already registered for this event.");
                 }
 
                 String insertNotif = "INSERT INTO notifications (user_id, message, is_read, created_at) " +

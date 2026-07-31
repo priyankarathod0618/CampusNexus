@@ -48,3 +48,4 @@ public class NotificationDAO {
         return new ArrayList<>(buffer);
     }
 }
+

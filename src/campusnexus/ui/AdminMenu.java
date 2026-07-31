@@ -10,6 +10,7 @@ import campusnexus.model.Teacher;
 import campusnexus.service.AdminService;
 import campusnexus.service.InputValidator;
 import campusnexus.util.ActivityLogger;
+import campusnexus.config.AppConfig;
 
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -21,7 +22,7 @@ import java.util.Scanner;
 import java.util.Set;
 
 public class AdminMenu implements DashboardMenu {
-    private static final String ADMIN_CODE = "ADMIN@123";
+    //private static final String ADMIN_CODE = "ADMIN@123";
 
     private final Scanner scanner;
     private final AdminService adminService = new AdminService();
@@ -39,7 +40,7 @@ public class AdminMenu implements DashboardMenu {
         System.out.print("Enter admin code: ");
         String code = scanner.nextLine().trim();
 
-        if (!ADMIN_CODE.equals(code)) {
+        if (!AppConfig.ADMIN_CODE.equals(code)) {
             System.out.println("Incorrect admin code.");
             return;
         }

@@ -5,10 +5,14 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DatabaseConfig {
-    // EDIT THESE to match your local MySQL setup
-    private static final String URL = "jdbc:mysql://localhost:3306/campusnexus";
-    private static final String USERNAME = "root";
-    private static final String PASSWORD = "";
+    // Reads CAMPUSNEXUS_DB_URL / _USER / _PASSWORD env vars if set, otherwise
+    // falls back to the old hardcoded local defaults.
+    private static final String URL =
+            System.getenv().getOrDefault("CAMPUSNEXUS_DB_URL", "jdbc:mysql://localhost:3306/campusnexus");
+    private static final String USERNAME =
+            System.getenv().getOrDefault("CAMPUSNEXUS_DB_USER", "root");
+    private static final String PASSWORD =
+            System.getenv().getOrDefault("CAMPUSNEXUS_DB_PASSWORD", "");
 
     private DatabaseConfig() {
     }

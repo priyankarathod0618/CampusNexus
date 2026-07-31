@@ -3,6 +3,7 @@ package campusnexus.service;
 import campusnexus.dao.UserDAO;
 import campusnexus.exception.DuplicateEmailException;
 import campusnexus.exception.DuplicateRollNumberException;
+import campusnexus.util.PasswordUtil;
 
 import java.sql.SQLException;
 
@@ -20,8 +21,9 @@ public class AdminService {
             throw new DuplicateRollNumberException("This roll number is already registered.");
         }
 
-        // First-time password is the registered phone number, per project decision
-        int userId = userDAO.insertUser(name, email, phone, "STUDENT");
+        // First-time password is the registered phone number, per project decision -
+        // now stored as a salted hash instead of plaintext.
+        int userId = userDAO.insertUser(name, email, PasswordUtil.hash(phone), "STUDENT");
         userDAO.insertStudentProfile(userId, collegeId, rollNumber, branch, year, hostelBlock, phone);
         return userId;
     }
@@ -33,7 +35,7 @@ public class AdminService {
             throw new DuplicateEmailException("An account already exists with this email.");
         }
 
-        int userId = userDAO.insertUser(name, email, phone, "TEACHER");
+        int userId = userDAO.insertUser(name, email, PasswordUtil.hash(phone), "TEACHER");
         userDAO.insertTeacherProfile(userId, collegeId, employeeId, department, subject, phone);
         return userId;
     }

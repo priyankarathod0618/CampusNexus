@@ -18,9 +18,11 @@ import javafx.scene.layout.VBox;
 
 import java.sql.SQLException;
 import java.util.List;
+import campusnexus.config.AppConfig;
+
 
 public class AdminSetupView {
-    private static final String ADMIN_CODE = "ADMIN@123";
+    //private static final String ADMIN_CODE = "ADMIN@123";
     private static final AdminService adminService = new AdminService();
     private static final UserDAO userDAO = new UserDAO();
     private static final CollegeDAO collegeDAO = new CollegeDAO();
@@ -43,7 +45,7 @@ public class AdminSetupView {
         var backBtn = Theme.secondaryButton("Back");
 
         submitBtn.setOnAction(e -> {
-            if (ADMIN_CODE.equals(codeField.getText().trim())) {
+            if (AppConfig.ADMIN_CODE.equals(codeField.getText().trim())) {
                 showAdminPanel();
             } else {
                 error.setText("Incorrect admin code.");

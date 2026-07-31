@@ -75,6 +75,7 @@ public class CollegeDAO {
                 GROUP BY c.id, c.name, c.city, c.code, c.email_domain, c.fees,
                          c.hostel_available, c.facilities
                 ORDER BY c.name
+                
                 """.formatted(placeholders);
 
         List<College> colleges = new ArrayList<>();

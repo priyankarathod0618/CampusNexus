@@ -65,6 +65,7 @@ public class AcademicResourceDAO {
                     ));
                 }
             }
+
         }
         return resources;
     }

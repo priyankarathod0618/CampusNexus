@@ -172,6 +172,11 @@ public class StudentMenu implements DashboardMenu {
             System.out.println("Invalid event ID.");
         } catch (campusnexus.exception.EventFullException e) {
             System.out.println(e.getMessage());
+        } catch (campusnexus.exception.AlreadyRegisteredException e) {
+        System.out.println(e.getMessage());
+    }
+        catch (SQLException e) {
+            System.out.println("Could not register (rolled back): " + e.getMessage());
         }
     }
 

@@ -157,6 +157,17 @@ public class UserDAO {
             ps.executeUpdate();
         }
     }
+    // Used only for the transparent legacy-plaintext -> hash upgrade in AuthService.
+    // Unlike updatePassword(), this does NOT touch must_change_password.
+    public void updatePasswordHashOnly(int userId, String newPasswordHash) throws SQLException {
+        String sql = "UPDATE users SET password = ? WHERE id = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, newPasswordHash);
+            ps.setInt(2, userId);
+            ps.executeUpdate();
+        }
+    }
 
     // INNER JOIN - only students that have a matching college row
     public List<Student> findAllStudents() throws SQLException {
