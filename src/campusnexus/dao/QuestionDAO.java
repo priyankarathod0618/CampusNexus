@@ -24,6 +24,38 @@ public class QuestionDAO {
             ps.executeUpdate();
         }
     }
+    public Question findById(int id) throws SQLException {
+
+        String sql = """
+            SELECT q.*, s.name
+            FROM questions q
+            JOIN students s ON q.student_id = s.student_id
+            WHERE q.question_id = ?
+            """;
+
+        try (Connection con = DatabaseConfig.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+
+                Question q = new Question();
+
+                q.setId(rs.getInt("question_id"));
+                q.setTitle(rs.getString("title"));
+                q.setDescription(rs.getString("description"));
+                q.setStatus(rs.getString("status"));
+                q.setStudentName(rs.getString("name"));
+
+                return q;
+            }
+        }
+
+        return null;
+    }
 
     public List<Question> findAll() throws SQLException {
         String sql = """

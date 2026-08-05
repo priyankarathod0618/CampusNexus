@@ -22,6 +22,47 @@ public class SkillDAO {
             ps.executeUpdate();
         }
     }
+    public List<Skill> findByStudent(int studentId) throws SQLException {
+
+        String sql = """
+            SELECT s.id,
+                   s.student_id,
+                   u.name AS student_name,
+                   s.skill_name,
+                   s.description,
+                   s.created_at
+            FROM skills s
+            INNER JOIN users u
+                ON s.student_id = u.id
+            WHERE s.student_id = ?
+            ORDER BY s.created_at DESC
+            """;
+
+        List<Skill> skills = new ArrayList<>();
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, studentId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+
+                while (rs.next()) {
+
+                    skills.add(new Skill(
+                            rs.getInt("id"),
+                            rs.getInt("student_id"),
+                            rs.getString("student_name"),
+                            rs.getString("skill_name"),
+                            rs.getString("description"),
+                            rs.getTimestamp("created_at").toLocalDateTime()
+                    ));
+                }
+            }
+        }
+
+        return skills;
+    }
 
     public List<Skill> findAll() throws SQLException {
         String sql = """

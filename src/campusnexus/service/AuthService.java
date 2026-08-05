@@ -17,16 +17,26 @@ public class AuthService {
             throws AccountNotFoundException, InvalidCredentialsException, SQLException {
 
         Person person = userDAO.findByEmail(email);
+
+        // ===== DEBUG =====
+        System.out.println("Person Found: " + (person != null));
+
+        if (person != null) {
+            System.out.println("Stored Password = [" + person.getPassword() + "]");
+            System.out.println("Entered Password = [" + password + "]");
+            System.out.println("Verify = " + PasswordUtil.verify(password, person.getPassword()));
+        }
+        // =================
+
         if (person == null) {
             throw new AccountNotFoundException(
                     "No account found with this email. Please contact your college admin.");
         }
+
         if (!PasswordUtil.verify(password, person.getPassword())) {
             throw new InvalidCredentialsException("Incorrect password. Try again.");
         }
 
-        // Transparently upgrade old plaintext passwords (seed data / pre-hashing
-        // accounts) to a salted hash now that we know the plaintext was correct.
         if (PasswordUtil.isLegacyPlaintext(person.getPassword())) {
             String upgraded = PasswordUtil.hash(password);
             userDAO.updatePasswordHashOnly(person.getId(), upgraded);
@@ -35,7 +45,6 @@ public class AuthService {
 
         return person;
     }
-
     public void changePassword(int userId, String newPassword) throws WeakPasswordException, SQLException {
         if (newPassword == null || newPassword.length() < MIN_PASSWORD_LENGTH) {
             throw new WeakPasswordException("Password must be at least " + MIN_PASSWORD_LENGTH + " characters.");

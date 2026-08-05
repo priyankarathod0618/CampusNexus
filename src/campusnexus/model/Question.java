@@ -3,14 +3,16 @@ package campusnexus.model;
 import java.time.LocalDateTime;
 
 public class Question {
-    private final int id;
-    private final int studentId;
-    private final String studentName;
-    private final String title;
-    private final String description;
-    private final String status;
-    private final LocalDateTime createdAt;
+    private  int id;
+    private  int studentId;
+    private  String studentName;
+    private  String title;
+    private  String description;
+    private  String status;
+    private  LocalDateTime createdAt;
 
+    public Question() {
+    }
     public Question(int id, int studentId, String studentName, String title, String description,
                     String status, LocalDateTime createdAt) {
         this.id = id;
@@ -29,4 +31,31 @@ public class Question {
     public String getDescription() { return description; }
     public String getStatus() { return status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setStudentId(int studentId) {
+        this.studentId = studentId;
+    }
+
+    public void setStudentName(String studentName) {
+        this.studentName = studentName;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }

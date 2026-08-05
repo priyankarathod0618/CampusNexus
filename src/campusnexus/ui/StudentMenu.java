@@ -33,29 +33,44 @@ public class StudentMenu implements DashboardMenu {
 
     @Override
     public void show() {
+
         if (student.isMustChangePassword()) {
             forcePasswordChange();
         }
 
         boolean logout = false;
+
         while (!logout) {
+
             printMenu();
+
             String choice = scanner.nextLine().trim();
+
             switch (choice) {
+
                 case "1" -> viewProfile();
-                case "2" -> visitorMenu.show();
-                case "3" -> viewUpcomingEvents();
-                case "4" -> viewNotificationsAndAnnouncements();
-                case "5" -> academicResourcesMenu();
-                case "6" -> clubsMenu();
-                case "7" -> seniorInteractionMenu();
-                case "8" -> skillSwapMenu();
-                case "9" -> marketplaceMenu();
-                case "10" -> hostelHelpMenu();
+
+                case "2" -> viewUpcomingEvents();
+
+                case "3" -> viewNotificationsAndAnnouncements();
+
+                case "4" -> academicResourcesMenu();
+
+                case "5" -> clubsMenu();
+
+                case "6" -> seniorInteractionMenu();
+
+                case "7" -> skillSwapMenu();
+
+                case "8" -> marketplaceMenu();
+
+                case "9" -> careerPlacementMenu();
+
                 case "0" -> {
                     System.out.println("Logging out...");
                     logout = true;
                 }
+
                 default -> System.out.println("Invalid option. Try again.");
             }
         }
@@ -91,16 +106,16 @@ public class StudentMenu implements DashboardMenu {
         System.out.println("====================================");
         System.out.println("Welcome, " + student.getName() + "!");
         System.out.println();
+
         System.out.println("1. View Profile");
-        System.out.println("2. Explore Colleges");
-        System.out.println("3. Upcoming Events");
-        System.out.println("4. Notifications & Announcements");
-        System.out.println("5. Academic Resources");
-        System.out.println("6. Clubs");
-        System.out.println("7. Senior Interaction (Q&A)");
-        System.out.println("8. Skill Swap");
-        System.out.println("9. Marketplace");
-        System.out.println("10. Hostel Help");
+        System.out.println("2. Upcoming Events");
+        System.out.println("3. Notifications & Announcements");
+        System.out.println("4. Academic Resources");
+        System.out.println("5. Clubs");
+        System.out.println("6. Senior Interaction (Q&A)");
+        System.out.println("7. Skill Swap");
+        System.out.println("8. Marketplace");
+        System.out.println("9. Career & Placements");
         System.out.println("0. Logout");
         System.out.print("Choose an option: ");
     }
@@ -182,27 +197,54 @@ public class StudentMenu implements DashboardMenu {
 
     private void viewNotificationsAndAnnouncements() {
         try {
-            List<Notification> recent = notificationDAO.findRecentByUser(student.getId(), 5);
+            List<Notification> notifications =
+                    notificationDAO.findRecentByUser(student.getId(), 5);
+
+            List<Announcement> announcements =
+                    announcementDAO.findRelevantForStudent(
+                            student.getBranch(), student.getYear());
+
             System.out.println();
-            System.out.println("----- Recent Notifications -----");
-            if (recent.isEmpty()) {
-                System.out.println("No notifications yet.");
+            System.out.println("=================================================");
+            System.out.println("      Notifications & Announcements");
+            System.out.println("=================================================");
+            System.out.println();
+
+            // Notifications
+            System.out.println("🔔 Notifications");
+            System.out.println("-------------------------------------------------");
+
+            if (notifications.isEmpty()) {
+                System.out.println("No new notifications.");
             } else {
-                for (Notification n : recent) {
-                    System.out.println("[" + n.getCreatedAt() + "] " + n.getMessage());
+                for (Notification n : notifications) {
+                    System.out.println("[" + n.getCreatedAt() + "]");
+                    System.out.println("✔ " + n.getMessage());
+                    System.out.println();
                 }
             }
 
-            List<Announcement> announcements = announcementDAO.findRelevantForStudent(student.getBranch(), student.getYear());
-            System.out.println();
-            System.out.println("----- Announcements for you -----");
+            // Announcements
+            System.out.println("📢 Announcements");
+            System.out.println("-------------------------------------------------");
+
             if (announcements.isEmpty()) {
-                System.out.println("No announcements yet.");
+                System.out.println("No announcements available for");
+                System.out.println(student.getBranch() + " - Year " + student.getYear() + ".");
             } else {
                 for (Announcement a : announcements) {
-                    System.out.println("[" + a.getCreatedAt() + "] " + a.getTitle() + " (" + a.getTeacherName() + "): " + a.getMessage());
+                    System.out.println("[" + a.getCreatedAt() + "]");
+                    System.out.println(a.getTitle());
+                    System.out.println(a.getMessage());
+                    System.out.println("By: " + a.getTeacherName());
+                    System.out.println();
                 }
             }
+
+            System.out.println("=================================================");
+            System.out.print("Press Enter to go back...");
+            scanner.nextLine();
+
         } catch (SQLException e) {
             System.out.println("Could not load notifications: " + e.getMessage());
         }
@@ -236,17 +278,7 @@ public class StudentMenu implements DashboardMenu {
         }
     }
 
-    private void printResources(List<AcademicResource> resources) {
-        System.out.println();
-        if (resources.isEmpty()) {
-            System.out.println("No resources found.");
-            return;
-        }
-        for (AcademicResource r : resources) {
-            System.out.println("- " + r.getTitle() + " [" + r.getType() + "] " + r.getSubject()
-                    + " Year " + r.getYear() + " | uploaded by " + r.getUploaderName());
-        }
-    }
+
 
     private void clubsMenu() {
         boolean back = false;
@@ -274,26 +306,141 @@ public class StudentMenu implements DashboardMenu {
         }
     }
 
-    private void printClubs(List<Club> clubs) {
-        System.out.println();
+    private void printClubs(List<Club> clubs) throws SQLException {
+
         if (clubs.isEmpty()) {
-            System.out.println("No clubs found.");
+            System.out.println("\nNo clubs found.");
             return;
         }
-        for (Club c : clubs) {
-            System.out.println(c.getId() + ". " + c.getName() + " [" + c.getCategory() + "] - " + c.getDescription());
+
+        while (true) {
+
+            System.out.println();
+            System.out.println("==============================================================");
+            System.out.println("                         Clubs");
+            System.out.println("==============================================================");
+            System.out.printf("%-4s %-30s %-18s%n",
+                    "ID", "Club Name", "Category");
+            System.out.println("--------------------------------------------------------------");
+
+            for (Club c : clubs) {
+                System.out.printf("%-4d %-30s %-18s%n",
+                        c.getId(),
+                        c.getName(),
+                        c.getCategory());
+            }
+
+            System.out.println("--------------------------------------------------------------");
+            System.out.println("Enter Club ID to view details");
+            System.out.println("0. Back");
+            System.out.print("Choose: ");
+
+            try {
+                int id = Integer.parseInt(scanner.nextLine());
+
+                if (id == 0)
+                    return;
+
+                Club selected = null;
+
+                for (Club c : clubs) {
+                    if (c.getId() == id) {
+                        selected = c;
+                        break;
+                    }
+                }
+
+                if (selected == null) {
+                    System.out.println("Invalid Club ID.");
+                } else {
+                    clubDetails(selected);
+                }
+
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input.");
+            }
         }
     }
+    private void clubDetails(Club club) throws SQLException {
 
+        boolean back = false;
+
+        while (!back) {
+
+            System.out.println();
+            System.out.println("==================================================");
+            System.out.println("                 Club Details");
+            System.out.println("==================================================");
+            System.out.println("Club Name   : " + club.getName());
+            System.out.println("Category    : " + club.getCategory());
+            System.out.println("Description : " + club.getDescription());
+
+            System.out.println("==================================================");
+            System.out.println("1. Join Club");
+            System.out.println("0. Back");
+            System.out.print("Choose: ");
+
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+
+                case "1":
+                    try {
+                        clubDAO.joinClub(club.getId(), student.getId());
+                        System.out.println("You've joined the club!");
+                    } catch (DuplicateClubMembershipException e) {
+                        System.out.println(e.getMessage());
+                    }
+                    break;
+
+                case "0":
+                    back = true;
+                    break;
+
+                default:
+                    System.out.println("Invalid option.");
+            }
+        }
+    }
     private void joinClub() throws SQLException {
-        printClubs(clubDAO.findAll());
-        System.out.print("Enter club ID to join: ");
+
+        List<Club> clubs = clubDAO.findAll();
+
+        if (clubs.isEmpty()) {
+            System.out.println("No clubs available.");
+            return;
+        }
+
+        System.out.println();
+        System.out.println("==============================================================");
+        System.out.println("                     Join a Club");
+        System.out.println("==============================================================");
+        System.out.printf("%-4s %-30s %-18s%n",
+                "ID", "Club Name", "Category");
+        System.out.println("--------------------------------------------------------------");
+
+        for (Club c : clubs) {
+            System.out.printf("%-4d %-30s %-18s%n",
+                    c.getId(),
+                    c.getName(),
+                    c.getCategory());
+        }
+
+        System.out.println("--------------------------------------------------------------");
+        System.out.print("Enter Club ID to join (0 to cancel): ");
+
         try {
-            int clubId = Integer.parseInt(scanner.nextLine().trim());
-            clubDAO.joinClub(clubId, student.getId());
-            System.out.println("You've joined the club!");
+            int id = Integer.parseInt(scanner.nextLine());
+
+            if (id == 0)
+                return;
+
+            clubDAO.joinClub(id, student.getId());
+
+            System.out.println("✓ You've successfully joined the club!");
+
         } catch (NumberFormatException e) {
-            System.out.println("Invalid club ID.");
+            System.out.println("Invalid Club ID.");
         } catch (DuplicateClubMembershipException e) {
             System.out.println(e.getMessage());
         }
@@ -333,59 +480,169 @@ public class StudentMenu implements DashboardMenu {
     }
 
     private void viewQuestions() throws SQLException {
-        List<Question> questions = questionDAO.findAll();
-        System.out.println();
-        if (questions.isEmpty()) {
-            System.out.println("No questions yet.");
-            return;
-        }
-        for (Question q : questions) {
-            System.out.println(q.getId() + ". [" + q.getStatus() + "] " + q.getTitle() + " - by " + q.getStudentName());
-        }
 
-        System.out.print("Enter question ID to view replies (0 to skip): ");
-        try {
-            int id = Integer.parseInt(scanner.nextLine().trim());
-            if (id == 0) return;
-            List<QuestionReply> replies = questionDAO.findRepliesByQuestion(id);
+        while (true) {
+
+            List<Question> questions = questionDAO.findAll();
+
+            if (questions.isEmpty()) {
+                System.out.println("\nNo questions available.");
+                return;
+            }
+
+            System.out.println();
+            System.out.println("==============================================================");
+            System.out.println("                Senior Interaction (Q&A)");
+            System.out.println("==============================================================");
+            System.out.printf("%-4s %-12s %-35s %-20s%n",
+                    "ID", "Status", "Title", "Asked By");
+            System.out.println("--------------------------------------------------------------------------");
+
+            for (Question q : questions) {
+                System.out.printf("%-4d %-12s %-35s %-20s%n",
+                        q.getId(),
+                        q.getStatus(),
+                        q.getTitle(),
+                        q.getStudentName());
+            }
+
+            System.out.println("--------------------------------------------------------------------------");
+            System.out.println("Enter Question ID to view details");
+            System.out.println("0. Back");
+            System.out.print("Choose: ");
+
+            try {
+
+                int id = Integer.parseInt(scanner.nextLine());
+
+                if (id == 0)
+                    return;
+
+                Question selected = null;
+
+                for (Question q : questions) {
+                    if (q.getId() == id) {
+                        selected = q;
+                        break;
+                    }
+                }
+
+                if (selected == null) {
+                    System.out.println("Invalid Question ID.");
+                } else {
+                    Question fullQuestion = questionDAO.findById(selected.getId());
+
+                    if (fullQuestion != null) {
+                        questionDetails(fullQuestion);
+                    }
+                }
+
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input.");
+            }
+        }
+    }
+    private void questionDetails(Question question) throws SQLException {
+
+        while (true) {
+
+            System.out.println();
+            System.out.println("==================================================");
+            System.out.println("               Question Details");
+            System.out.println("==================================================");
+
+            System.out.println("Title      : " + question.getTitle());
+            System.out.println("Asked By   : " + question.getStudentName());
+            System.out.println("Status     : " + question.getStatus());
+            System.out.println();
+
+            System.out.println("Question");
+            System.out.println("--------------------------------------------------");
+            System.out.println(question.getDescription());
+
+            System.out.println();
+            System.out.println("Replies");
+            System.out.println("--------------------------------------------------");
+
+            List<QuestionReply> replies =
+                    questionDAO.findRepliesByQuestion(question.getId());
+
             if (replies.isEmpty()) {
+
                 System.out.println("No replies yet.");
+
             } else {
-                for (QuestionReply r : replies) {
-                    System.out.println("  " + r.getAuthorName() + ": " + r.getReplyText());
+
+                int count = 1;
+
+                for (QuestionReply reply : replies) {
+
+                    System.out.println(count + ". " + reply.getAuthorName());
+                    System.out.println(reply.getReplyText());
+                    System.out.println();
+
+                    count++;
                 }
             }
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid question ID.");
+
+            System.out.println("==================================================");
+            System.out.println("0. Back");
+            System.out.print("Choose: ");
+
+            String choice = scanner.nextLine();
+
+            if (choice.equals("0"))
+                return;
+
+            System.out.println("Invalid option.");
         }
     }
 
     private void skillSwapMenu() {
+
         boolean back = false;
+
         while (!back) {
+
             System.out.println();
             System.out.println("===== Skill Swap =====");
             System.out.println("1. Offer a Skill");
             System.out.println("2. Browse All Skills");
             System.out.println("3. Search Skill");
+            System.out.println("4. My Skills");
             System.out.println("0. Back");
             System.out.print("Choose an option: ");
+
             String choice = scanner.nextLine().trim();
 
             try {
+
                 switch (choice) {
+
                     case "1" -> offerSkill();
+
                     case "2" -> printSkills(skillDAO.findAll());
+
                     case "3" -> {
+
                         System.out.print("Enter skill keyword: ");
+
                         String keyword = scanner.nextLine().trim();
+
                         printSkills(skillDAO.searchBySkillName(keyword));
                     }
+
+                    case "4" -> printSkills(skillDAO.findByStudent(student.getId()));
+
                     case "0" -> back = true;
-                    default -> System.out.println("Invalid option. Try again.");
+
+                    default -> System.out.println("Invalid option.");
                 }
+
             } catch (SQLException e) {
+
                 System.out.println("Database error: " + e.getMessage());
+
             }
         }
     }
@@ -399,14 +656,111 @@ public class StudentMenu implements DashboardMenu {
         System.out.println("Skill listed!");
     }
 
-    private void printSkills(List<Skill> skills) {
-        System.out.println();
+    private void printSkills(List<Skill> skills) throws SQLException {
+
         if (skills.isEmpty()) {
-            System.out.println("No skills found.");
+            System.out.println("\nNo skills found.");
             return;
         }
-        for (Skill s : skills) {
-            System.out.println("- " + s.getSkillName() + " (" + s.getStudentName() + "): " + s.getDescription());
+
+        while (true) {
+
+            System.out.println();
+            System.out.println("==============================================================");
+            System.out.println("                    Skill Exchange");
+            System.out.println("==============================================================");
+            System.out.printf("%-4s %-20s %-20s %-30s%n",
+                    "ID", "Skill", "Student", "Description");
+            System.out.println("--------------------------------------------------------------------------");
+
+            for (Skill s : skills) {
+
+                String desc = s.getDescription();
+
+                if (desc.length() > 28)
+                    desc = desc.substring(0, 28) + "...";
+
+                System.out.printf("%-4d %-20s %-20s %-30s%n",
+                        s.getId(),
+                        s.getSkillName(),
+                        s.getStudentName(),
+                        desc);
+            }
+
+            System.out.println("--------------------------------------------------------------------------");
+            System.out.println("Enter Skill ID to view details");
+            System.out.println("0. Back");
+            System.out.print("Choose: ");
+
+            try {
+
+                int id = Integer.parseInt(scanner.nextLine());
+
+                if (id == 0)
+                    return;
+
+                Skill selected = null;
+
+                for (Skill s : skills) {
+
+                    if (s.getId() == id) {
+                        selected = s;
+                        break;
+                    }
+                }
+
+                if (selected == null) {
+                    System.out.println("Invalid Skill ID.");
+                } else {
+                    skillDetails(selected);
+                }
+
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input.");
+            }
+        }
+    }
+    private void skillDetails(Skill skill) {
+
+        while (true) {
+
+            System.out.println();
+            System.out.println("==================================================");
+            System.out.println("                 Skill Details");
+            System.out.println("==================================================");
+
+            System.out.println("Skill       : " + skill.getSkillName());
+            System.out.println("Offered By  : " + skill.getStudentName());
+
+            System.out.println();
+            System.out.println("Description");
+            System.out.println("--------------------------------------------------");
+            System.out.println(skill.getDescription());
+
+            System.out.println("==================================================");
+            System.out.println("1. Contact Student");
+            System.out.println("0. Back");
+            System.out.print("Choose: ");
+
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+
+                case "1":
+
+                    System.out.println();
+                    System.out.println("Student : " + skill.getStudentName());
+                    System.out.println("Contact through CampusNexus messaging.");
+                    System.out.println("(Messaging module can be added later.)");
+
+                    break;
+
+                case "0":
+                    return;
+
+                default:
+                    System.out.println("Invalid option.");
+            }
         }
     }
 
@@ -437,43 +791,178 @@ public class StudentMenu implements DashboardMenu {
     }
 
     private void listItem() throws SQLException {
+
         System.out.print("Enter item title: ");
         String title = scanner.nextLine().trim();
+
         System.out.print("Enter description: ");
         String description = scanner.nextLine().trim();
-        System.out.print("Enter price: ");
-        try {
-            double price = Double.parseDouble(scanner.nextLine().trim());
-            marketplaceDAO.listItem(student.getId(), title, description, price);
-            System.out.println("Item listed!");
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid price.");
+
+        double price;
+
+        while (true) {
+
+            System.out.print("Enter price: ");
+
+            String input = scanner.nextLine().trim();
+
+            try {
+
+                price = Double.parseDouble(input);
+
+                if (price <= 0) {
+
+                    System.out.println("Price must be greater than zero.");
+                    continue;
+                }
+
+                break;
+
+            } catch (NumberFormatException e) {
+
+                System.out.println("Please enter a valid price.");
+
+            }
         }
+
+        marketplaceDAO.listItem(student.getId(), title, description, price);
+
+        System.out.println("Item listed successfully!");
     }
 
     private void myListings() throws SQLException {
-        List<MarketplaceItem> items = marketplaceDAO.findBySeller(student.getId());
-        printItems(items);
-        System.out.print("Enter item ID to mark as sold (0 to skip): ");
-        try {
-            int id = Integer.parseInt(scanner.nextLine().trim());
-            if (id == 0) return;
-            marketplaceDAO.markSold(id, student.getId());
-            System.out.println("Marked as sold.");
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid item ID.");
-        }
-    }
 
-    private void printItems(List<MarketplaceItem> items) {
-        System.out.println();
+        List<MarketplaceItem> items = marketplaceDAO.findBySeller(student.getId());
+
         if (items.isEmpty()) {
-            System.out.println("No items found.");
+            System.out.println("\nYou haven't listed any items yet.");
             return;
         }
-        for (MarketplaceItem m : items) {
-            System.out.println(m.getId() + ". " + m.getTitle() + " - Rs." + m.getPrice()
-                    + " [" + m.getStatus() + "] by " + m.getSellerName());
+
+        printItems(items);
+    }
+
+    private void printItems(List<MarketplaceItem> items) throws SQLException {
+
+        if (items.isEmpty()) {
+            System.out.println("\nNo items found.");
+            return;
+        }
+
+        while (true) {
+
+            System.out.println();
+            System.out.println("==============================================================");
+            System.out.println("                     Marketplace");
+            System.out.println("==============================================================");
+            System.out.printf("%-4s %-30s %-10s %-12s %-20s%n",
+                    "ID", "Item", "Price", "Status", "Seller");
+            System.out.println("--------------------------------------------------------------------------");
+
+            for (MarketplaceItem item : items) {
+
+                System.out.printf("%-4d %-30s Rs.%-7.2f %-12s %-20s%n",
+                        item.getId(),
+                        item.getTitle(),
+                        item.getPrice(),
+                        item.getStatus(),
+                        item.getSellerName());
+            }
+
+            System.out.println("--------------------------------------------------------------------------");
+            System.out.println("Enter Item ID to view details");
+            System.out.println("0. Back");
+            System.out.print("Choose: ");
+
+            try {
+
+                int id = Integer.parseInt(scanner.nextLine());
+
+                if (id == 0)
+                    return;
+
+                MarketplaceItem selected = null;
+
+                for (MarketplaceItem item : items) {
+
+                    if (item.getId() == id) {
+                        selected = item;
+                        break;
+                    }
+                }
+
+                if (selected == null) {
+                    System.out.println("Invalid Item ID.");
+                } else {
+                    marketplaceDetails(selected);
+                }
+
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input.");
+            }
+        }
+    }
+    private void marketplaceDetails(MarketplaceItem item) throws SQLException {
+
+        while (true) {
+
+            System.out.println();
+            System.out.println("==================================================");
+            System.out.println("                Item Details");
+            System.out.println("==================================================");
+
+            System.out.println("Title       : " + item.getTitle());
+            System.out.println("Price       : Rs." + item.getPrice());
+            System.out.println("Seller      : " + item.getSellerName());
+            System.out.println("Status      : " + item.getStatus());
+
+            System.out.println();
+            System.out.println("Description");
+            System.out.println("--------------------------------------------------");
+            System.out.println(item.getDescription());
+
+            System.out.println("==================================================");
+
+            if (item.getSellerId() == student.getId()) {
+
+                System.out.println("1. Mark as Sold");
+
+            } else {
+
+                System.out.println("1. Contact Seller");
+
+            }
+
+            System.out.println("0. Back");
+            System.out.print("Choose: ");
+
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+
+                case "1":
+
+                    if (item.getSellerId() == student.getId()) {
+
+                        marketplaceDAO.markSold(item.getId(), student.getId());
+
+                        System.out.println("Item marked as SOLD.");
+
+                    } else {
+
+                        System.out.println("Seller : " + item.getSellerName());
+                        System.out.println("Contact through CampusNexus.");
+
+                    }
+
+                    break;
+
+                case "0":
+                    return;
+
+                default:
+                    System.out.println("Invalid option.");
+            }
         }
     }
 
@@ -520,6 +1009,166 @@ public class StudentMenu implements DashboardMenu {
         for (HostelComplaint c : complaints) {
             System.out.println("[" + c.getStatus() + "] " + c.getCategory() + ": " + c.getDescription()
                     + " (submitted " + c.getCreatedAt() + ")");
+        }
+    }
+    private void printResources(List<AcademicResource> resources) throws SQLException {
+
+        if (resources.isEmpty()) {
+            System.out.println("\nNo resources found.");
+            return;
+        }
+
+        while (true) {
+
+            System.out.println();
+            System.out.println("==============================================================");
+            System.out.println("                    Academic Resources");
+            System.out.println("==============================================================");
+            System.out.printf("%-4s %-30s %-6s %-15s %-5s%n",
+                    "ID", "Title", "Type", "Subject", "Year");
+            System.out.println("--------------------------------------------------------------");
+
+            for (AcademicResource r : resources) {
+                System.out.printf("%-4d %-30s %-6s %-15s %-5d%n",
+                        r.getId(),
+                        r.getTitle(),
+                        r.getType(),
+                        r.getSubject(),
+                        r.getYear());
+            }
+
+            System.out.println("--------------------------------------------------------------");
+            System.out.println("Enter Resource ID to view details");
+            System.out.println("0. Back");
+            System.out.print("Choose: ");
+
+            try {
+                int id = Integer.parseInt(scanner.nextLine());
+
+                if (id == 0)
+                    return;
+
+                AcademicResource selected = null;
+
+                for (AcademicResource r : resources) {
+                    if (r.getId() == id) {
+                        selected = r;
+                        break;
+                    }
+                }
+
+                if (selected == null) {
+                    System.out.println("Invalid Resource ID.");
+                } else {
+                    resourceDetails(selected);
+                }
+
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input.");
+            }
+        }
+    }
+    private void resourceDetails(AcademicResource resource) {
+
+        boolean back = false;
+
+        while (!back) {
+
+            System.out.println();
+            System.out.println("==================================================");
+            System.out.println("               Resource Details");
+            System.out.println("==================================================");
+            System.out.println("Title       : " + resource.getTitle());
+            System.out.println("Subject     : " + resource.getSubject());
+            System.out.println("Year        : " + resource.getYear());
+            System.out.println("Type        : " + resource.getType());
+            System.out.println("Uploaded By : " + resource.getUploaderName());
+
+            // Uncomment if your model has these fields
+            // System.out.println("Description : " + resource.getDescription());
+            // System.out.println("Uploaded On : " + resource.getUploadedDate());
+
+            System.out.println("==================================================");
+            System.out.println("1. Download");
+            System.out.println("2. View Information");
+            System.out.println("0. Back");
+            System.out.print("Choose: ");
+
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+
+                case "1":
+                    System.out.println();
+                    System.out.println("Downloading \"" + resource.getTitle() + "\"...");
+                    System.out.println("(Demo only - file download not implemented)");
+                    break;
+
+                case "2":
+                    System.out.println();
+                    System.out.println("Resource Information");
+                    System.out.println("----------------------------------");
+                    System.out.println("Title       : " + resource.getTitle());
+                    System.out.println("Subject     : " + resource.getSubject());
+                    System.out.println("Year        : " + resource.getYear());
+                    System.out.println("Type        : " + resource.getType());
+                    System.out.println("Uploaded By : " + resource.getUploaderName());
+                    break;
+
+                case "0":
+                    back = true;
+                    break;
+
+                default:
+                    System.out.println("Invalid option.");
+            }
+        }
+    }
+    private void careerPlacementMenu() {
+
+        boolean back = false;
+
+        while (!back) {
+
+            System.out.println();
+            System.out.println("===== Career & Placements =====");
+            System.out.println("1. Internship Opportunities");
+            System.out.println("2. Placement Drives");
+            System.out.println("3. Career Resources");
+            System.out.println("0. Back");
+            System.out.print("Choose an option: ");
+
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+
+                case "1":
+                    System.out.println();
+                    System.out.println("No internship opportunities available.");
+                    break;
+
+                case "2":
+                    System.out.println();
+                    System.out.println("No placement drives available.");
+                    break;
+
+                case "3":
+                    System.out.println();
+                    System.out.println("Career Resources");
+                    System.out.println("--------------------------------");
+                    System.out.println("- Resume Writing Guide");
+                    System.out.println("- Interview Preparation");
+                    System.out.println("- Aptitude Practice");
+                    System.out.println("- Group Discussion Tips");
+                    break;
+
+                case "0":
+                    back = true;
+                    break;
+
+                default:
+                    System.out.println("Invalid option.");
+            }
         }
     }
 }
