@@ -27,10 +27,10 @@ public class QuestionDAO {
     public Question findById(int id) throws SQLException {
 
         String sql = """
-            SELECT q.*, s.name
+            SELECT q.id, q.student_id, q.title, q.description, q.status, q.created_at, u.name
             FROM questions q
-            JOIN students s ON q.student_id = s.student_id
-            WHERE q.question_id = ?
+            JOIN users u ON q.student_id = u.id
+            WHERE q.id = ?
             """;
 
         try (Connection con = DatabaseConfig.getConnection();
@@ -38,19 +38,20 @@ public class QuestionDAO {
 
             ps.setInt(1, id);
 
-            ResultSet rs = ps.executeQuery();
+            try (ResultSet rs = ps.executeQuery()) {
 
-            if (rs.next()) {
+                if (rs.next()) {
 
-                Question q = new Question();
+                    Question q = new Question();
 
-                q.setId(rs.getInt("question_id"));
-                q.setTitle(rs.getString("title"));
-                q.setDescription(rs.getString("description"));
-                q.setStatus(rs.getString("status"));
-                q.setStudentName(rs.getString("name"));
+                    q.setId(rs.getInt("id"));
+                    q.setTitle(rs.getString("title"));
+                    q.setDescription(rs.getString("description"));
+                    q.setStatus(rs.getString("status"));
+                    q.setStudentName(rs.getString("name"));
 
-                return q;
+                    return q;
+                }
             }
         }
 
@@ -135,7 +136,7 @@ public class QuestionDAO {
                 ));
             }
         }
-        return runQuery(sql);
+        return questions;
     }
 
     public List<QuestionReply> findRepliesByQuestion(int questionId) throws SQLException {
