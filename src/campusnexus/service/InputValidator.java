@@ -7,12 +7,14 @@ public class InputValidator {
     }
 
 
+    // Letters only, single spaces between words, no leading/trailing/double spaces.
     public static boolean isValidName(String name) {
-        return name.matches("[A-Za-z ]{3,50}");
+        return name != null && name.matches("[A-Za-z]+( [A-Za-z]+)*") && name.length() >= 3 && name.length() <= 50;
     }
 
+    // Roll numbers are purely numeric (per college policy), 3-20 digits, no spaces.
     public static boolean isValidRollNumber(String roll) {
-        return roll.matches("[A-Za-z0-9-]{3,20}");
+        return roll != null && roll.matches("[0-9]{3,20}");
     }
 
     public static boolean isValidBranch(String branch) {
@@ -44,8 +46,9 @@ public class InputValidator {
         return email.matches(regex);
     }
 
+    // Exactly 10 digits, first digit 6-9 (valid Indian mobile prefixes), no spaces.
     public static boolean isValidPhone(String phone) {
-        return phone != null && phone.matches("\\d{10}");
+        return phone != null && phone.matches("[6-9][0-9]{9}");
     }
 
     public static boolean isValidYear(String yearStr) {

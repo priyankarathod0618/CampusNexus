@@ -4,6 +4,7 @@ import campusnexus.dao.CollegeDAO;
 import campusnexus.dao.UserDAO;
 import campusnexus.exception.DuplicateEmailException;
 import campusnexus.exception.DuplicateRollNumberException;
+import campusnexus.exception.InvalidDataException;
 import campusnexus.model.College;
 import campusnexus.model.Student;
 import campusnexus.model.Teacher;
@@ -110,7 +111,7 @@ public class AdminSetupView {
             } catch (NumberFormatException ex) {
                 status.setStyle("-fx-text-fill: #D64545;");
                 status.setText("Year must be a number (1-4).");
-            } catch (DuplicateEmailException | DuplicateRollNumberException ex) {
+            } catch (DuplicateEmailException | DuplicateRollNumberException | InvalidDataException ex) {
                 status.setStyle("-fx-text-fill: #D64545;");
                 status.setText(ex.getMessage());
             } catch (SQLException ex) {
@@ -154,7 +155,7 @@ public class AdminSetupView {
                 status.setText("Teacher account created. First-time password is the phone number.");
                 name.clear(); email.clear(); phone.clear(); employeeId.clear(); department.clear(); subject.clear();
 
-            } catch (DuplicateEmailException ex) {
+            } catch (DuplicateEmailException | InvalidDataException ex) {
                 status.setStyle("-fx-text-fill: #D64545;");
                 status.setText(ex.getMessage());
             } catch (SQLException ex) {

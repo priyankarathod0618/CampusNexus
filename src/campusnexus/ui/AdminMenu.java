@@ -4,6 +4,7 @@ import campusnexus.dao.CollegeDAO;
 import campusnexus.dao.UserDAO;
 import campusnexus.exception.DuplicateEmailException;
 import campusnexus.exception.DuplicateRollNumberException;
+import campusnexus.exception.InvalidDataException;
 import campusnexus.model.College;
 import campusnexus.model.Student;
 import campusnexus.model.Teacher;
@@ -70,7 +71,7 @@ public class AdminMenu implements DashboardMenu {
                 case "1" -> addStudent();
                 case "2" -> addTeacher();
                 case "3" -> viewCampusMembers();
-                case "4" -> ActivityLogger.printAll();
+                case "4" -> ActivityLogger.printByCollege(loggedInAdmin.getCollegeId());
                 case "0" -> inAdmin = false;
                 default -> System.out.println("Invalid option.");
             }
@@ -120,35 +121,15 @@ public class AdminMenu implements DashboardMenu {
                 System.out.print("Enter phone number: ");
                 phone = scanner.nextLine().trim();
 
-                if (phone.length() != 10) {
-                    System.out.println("Phone number must be exactly 10 digits.");
-                    continue;
-                }
-
-                boolean ok = true;
-                for (int i = 0; i < 10; i++) {
-                    char ch = phone.charAt(i);
-                    if (ch < '0' || ch > '9') {
-                        ok = false;
-                        break;
-                    }
-                }
-
-                if (!ok) {
-                    System.out.println("Phone number must contain only digits.");
-                    continue;
-                }
-
-                char first = phone.charAt(0);
-                if (first!='6' && first!='7' && first!='8' && first!='9') {
-                    System.out.println("Phone number must start with 6, 7, 8 or 9.");
+                if (!InputValidator.isValidPhone(phone)) {
+                    System.out.println("Phone number must be exactly 10 digits and start with 6, 7, 8 or 9 (no spaces).");
                     continue;
                 }
 
                 break;
             }
 
-            System.out.print("Enter roll number: ");
+            System.out.print("Enter roll number (digits only): ");
             String rollNumber = scanner.nextLine().trim();
 
             while (!InputValidator.isValidRollNumber(rollNumber)) {
@@ -230,7 +211,7 @@ public class AdminMenu implements DashboardMenu {
 
             ActivityLogger.log(loggedInAdmin.getCollegeId() + "|Admin added student: " + email);
 
-        } catch (DuplicateEmailException | DuplicateRollNumberException e) {
+        } catch (DuplicateEmailException | DuplicateRollNumberException | InvalidDataException e) {
             System.out.println(e.getMessage());
         } catch (SQLException e) {
             System.out.println("Database error while adding student: " + e.getMessage());
@@ -247,10 +228,25 @@ public class AdminMenu implements DashboardMenu {
             System.out.print("Enter name: ");
             String name = scanner.nextLine().trim();
 
+            while (!InputValidator.isValidName(name)) {
+                System.out.print("Invalid name. Enter again: ");
+                name = scanner.nextLine().trim();
+            }
+
+            // BUGFIX: addStudent() already restricted the email to the admin's own
+            // college domain; addTeacher() was missing the same check, which let a
+            // teacher be registered under any email domain regardless of college.
+            College college = collegeDAO.findById(collegeId);
+            String domain = college.getEmailDomain().trim();
+
             System.out.print("Enter college email: ");
             String email = scanner.nextLine().trim();
-            while (!InputValidator.isValidEmail(email)) {
-                System.out.print("Invalid email. Enter college email: ");
+
+            while (!InputValidator.isValidEmail(email)
+                    || !email.toLowerCase().endsWith("@" + domain.toLowerCase())) {
+
+                System.out.println("Email must end with @" + domain);
+                System.out.print("Enter college email: ");
                 email = scanner.nextLine().trim();
             }
 
@@ -260,28 +256,8 @@ public class AdminMenu implements DashboardMenu {
                 System.out.print("Enter phone number: ");
                 phone = scanner.nextLine().trim();
 
-                if (phone.length() != 10) {
-                    System.out.println("Phone number must be exactly 10 digits.");
-                    continue;
-                }
-
-                boolean valid = true;
-                for (int i = 0; i < phone.length(); i++) {
-                    char ch = phone.charAt(i);
-                    if (ch < '0' || ch > '9') {
-                        valid = false;
-                        break;
-                    }
-                }
-
-                if (!valid) {
-                    System.out.println("Phone number must contain only digits.");
-                    continue;
-                }
-
-                char first = phone.charAt(0);
-                if (first!='6' && first!='7' && first!='8' && first!='9') {
-                    System.out.println("Phone number must start with 6, 7, 8 or 9.");
+                if (!InputValidator.isValidPhone(phone)) {
+                    System.out.println("Phone number must be exactly 10 digits and start with 6, 7, 8 or 9 (no spaces).");
                     continue;
                 }
 
@@ -414,7 +390,7 @@ public class AdminMenu implements DashboardMenu {
 
             ActivityLogger.log(loggedInAdmin.getCollegeId() + "|Admin added teacher: " + email);
 
-        } catch (DuplicateEmailException e) {
+        } catch (DuplicateEmailException | InvalidDataException e) {
             System.out.println(e.getMessage());
         } catch (SQLException e) {
             System.out.println("Database error while adding teacher: " + e.getMessage());
