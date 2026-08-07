@@ -169,11 +169,30 @@ public class StudentMenu implements DashboardMenu {
         }
 
         System.out.println();
+        System.out.println("==============================================================================================================");
+        System.out.println("                                        Upcoming Events");
+        System.out.println("==============================================================================================================");
+
+        System.out.printf("%-4s %-35s %-12s %-25s %-12s %-8s%n",
+                "ID", "Event", "Date", "Venue", "Seats", "Status");
+
+        System.out.println("--------------------------------------------------------------------------------------------------------------");
+
         for (Event e : events) {
-            System.out.println(e.getId() + ". " + e.getTitle() + " - " + e.getEventDate() + " @ " + e.getVenue()
-                    + " (" + e.getRegisteredCount() + "/" + e.getCapacity() + " seats)"
-                    + (e.isFull() ? " [FULL]" : ""));
+
+            String seats = e.getRegisteredCount() + "/" + e.getCapacity();
+            String status = e.isFull() ? "FULL" : "OPEN";
+
+            System.out.printf("%-4d %-35s %-12s %-25s %-12s %-8s%n",
+                    e.getId(),
+                    e.getTitle(),
+                    e.getEventDate(),
+                    e.getVenue(),
+                    seats,
+                    status);
         }
+
+        System.out.println("--------------------------------------------------------------------------------------------------------------");
 
         System.out.print("Enter event ID to register (0 to cancel): ");
         try {
@@ -202,7 +221,10 @@ public class StudentMenu implements DashboardMenu {
 
             List<Announcement> announcements =
                     announcementDAO.findRelevantForStudent(
-                            student.getBranch(), student.getYear());
+                            student.getCollegeId(),
+                            student.getBranch(),
+                            student.getYear()
+                    );
 
             System.out.println();
             System.out.println("=================================================");

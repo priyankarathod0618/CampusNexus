@@ -317,20 +317,47 @@ public class UserDAO {
     }
 
     // Queries the SQL VIEW directly (vw_student_directory) - Unit 7 topic demo
-    public List<String> findStudentDirectoryFromView() throws SQLException {
-        String sql = "SELECT name, email, branch, year, hostel_block, college_name " +
-                "FROM vw_student_directory ORDER BY name";
+    public List<String> findStudentDirectoryFromView(String college, String branch) throws SQLException {
+
+        String sql = """
+            SELECT name, email, branch, year, hostel_block, college_name
+            FROM vw_student_directory
+            WHERE college_name = ?
+              AND branch = ?
+            ORDER BY year, name
+            """;
 
         List<String> lines = new ArrayList<>();
+
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, college);
+            ps.setString(2, branch);
+
+            ResultSet rs = ps.executeQuery();
+
+            lines.add("------------------------------------------------------------------------------------------------------");
+            lines.add(String.format("%-25s %-12s %-8s %-15s %-25s",
+                    "Name", "Branch", "Year", "Hostel", "College"));
+            lines.add("------------------------------------------------------------------------------------------------------");
 
             while (rs.next()) {
-                lines.add(rs.getString("name") + " | " + rs.getString("branch") + " Year " + rs.getInt("year")
-                        + " | " + rs.getString("hostel_block") + " | " + rs.getString("college_name"));
+
+                lines.add(String.format("%-25s %-12s %-8d %-15s %-25s",
+                        rs.getString("name"),
+                        rs.getString("branch"),
+                        rs.getInt("year"),
+                        rs.getString("hostel_block"),
+                        rs.getString("college_name")));
             }
+
+            lines.add("------------------------------------------------------------------------------------------------------");
         }
+
         return lines;
+    }
+    public List<String> findStudentDirectoryFromView() throws SQLException {
+        return findStudentDirectoryFromView(null, null);
     }
 }

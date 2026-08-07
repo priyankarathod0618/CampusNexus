@@ -184,7 +184,11 @@ public class StudentDashboardView {
             for (Notification n : notifications) {
                 list.getItems().add("[" + n.getCreatedAt() + "] " + n.getMessage());
             }
-            List<Announcement> announcements = announcementDAO.findRelevantForStudent(student.getBranch(), student.getYear());
+            List<Announcement> announcements =
+                    announcementDAO.findRelevantForStudent(
+                            student.getCollegeId(),
+                            student.getBranch(),
+                            student.getYear());
             for (Announcement a : announcements) {
                 list.getItems().add("[ANNOUNCEMENT] " + a.getTitle() + " (" + a.getTeacherName() + "): " + a.getMessage());
             }

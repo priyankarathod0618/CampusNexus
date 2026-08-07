@@ -75,4 +75,37 @@ public class ActivityLogger {
             System.out.println("No activity log yet.");
         }
     }
+    public static void printByCollege(int collegeId) {
+
+        try (RandomAccessFile raf = new RandomAccessFile(LOG_FILE, "r")) {
+
+            long recordLength = RECORD_SIZE + LINE_SEP.length();
+            long totalRecords = raf.length() / recordLength;
+
+            System.out.println();
+            System.out.println("----- Admin Activity Log -----");
+
+            for (long i = 0; i < totalRecords; i++) {
+
+                raf.seek(i * recordLength);
+
+                byte[] buffer = new byte[RECORD_SIZE];
+                raf.readFully(buffer);
+
+                String log = new String(buffer).trim();
+
+                if (log.contains(collegeId + "|")) {
+
+                    System.out.println(
+                            log.substring(log.indexOf("|") + 1)
+                    );
+
+                }
+
+            }
+
+        } catch (IOException e) {
+            System.out.println("No activity log yet.");
+        }
+    }
 }

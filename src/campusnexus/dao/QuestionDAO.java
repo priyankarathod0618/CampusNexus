@@ -68,17 +68,58 @@ public class QuestionDAO {
     }
 
     // Subquery + NOT EXISTS (Unit 7 topic demo): questions nobody has replied to yet
-    public List<Question> findUnanswered() throws SQLException {
+    public List<Question> findUnanswered(int collegeId, String department) throws SQLException {
+
         String sql = """
-                SELECT q.id, q.student_id, u.name AS student_name, q.title, q.description, q.status, q.created_at
+                SELECT
+                    q.id,
+                    q.student_id,
+                    u.name AS student_name,
+                    q.title,
+                    q.description,
+                    q.status,
+                    q.created_at
                 FROM questions q
-                INNER JOIN users u ON q.student_id = u.id
-                WHERE NOT EXISTS (
-                    SELECT 1 FROM question_replies r WHERE r.question_id = q.id
-                )
+                JOIN users u
+                    ON q.student_id = u.id
+                JOIN student_profiles s
+                    ON q.student_id = s.user_id
+                WHERE s.college_id = ?
+                  AND s.branch = ?
+                  AND NOT EXISTS (
+                        SELECT 1
+                        FROM question_replies r
+                        WHERE r.question_id = q.id
+                  )
                 ORDER BY q.created_at
-                """;
-        return runQuery(sql);
+            """;
+
+        List<Question> questions = new ArrayList<>();
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, collegeId);
+            ps.setString(2, department);
+
+            try (ResultSet rs = ps.executeQuery()) {
+
+                while (rs.next()) {
+
+                    questions.add(new Question(
+                            rs.getInt("id"),
+                            rs.getInt("student_id"),
+                            rs.getString("student_name"),
+                            rs.getString("title"),
+                            rs.getString("description"),
+                            rs.getString("status"),
+                            rs.getTimestamp("created_at").toLocalDateTime()
+                    ));
+                }
+            }
+        }
+
+        return questions;
     }
 
     private List<Question> runQuery(String sql) throws SQLException {
@@ -94,7 +135,7 @@ public class QuestionDAO {
                 ));
             }
         }
-        return questions;
+        return runQuery(sql);
     }
 
     public List<QuestionReply> findRepliesByQuestion(int questionId) throws SQLException {

@@ -39,17 +39,15 @@ public class TeacherMenu implements DashboardMenu {
         while (!logout) {
             printMenu();
             String choice = scanner.nextLine().trim();
+
             switch (choice) {
                 case "1" -> viewProfile();
                 case "2" -> viewStudents();
-                case "3" -> viewComplaintReport();
-                case "4" -> uploadResource();
-                case "5" -> postAnnouncement();
-                case "6" -> answerQuestions();
-                case "7" -> resolveComplaint();
-                case "8" -> basicAnalytics();
-                case "9" -> exportReports();
-                case "0" -> {
+                case "3" -> uploadResource();
+                case "4" -> postAnnouncement();
+                case "5" -> answerQuestions();
+                case "6" -> exportReports();
+                case "7" -> {
                     System.out.println("Logging out...");
                     logout = true;
                 }
@@ -90,15 +88,12 @@ public class TeacherMenu implements DashboardMenu {
         System.out.println();
         System.out.println("1. View Profile");
         System.out.println("2. View Students");
-        System.out.println("3. Hostel Complaint Report (by block)");
-        System.out.println("4. Upload Academic Resources");
-        System.out.println("5. Post Announcements");
-        System.out.println("6. Answer Student Questions");
-        System.out.println("7. Resolve Hostel Complaint");
-        System.out.println("8. Basic Analytics");
-        System.out.println("9. Export Reports to File");
-        System.out.println("0. Logout");
-        System.out.print("Choose an option: ");
+        System.out.println("3. Upload Academic Resources");
+        System.out.println("4. Post Announcements");
+        System.out.println("5. Answer Student Questions");
+        System.out.println("6. Export Reports to File");
+        System.out.println("7. Logout");
+        System.out.print("Enter your choice (1-7): ");
     }
 
     private void viewProfile() {
@@ -108,52 +103,120 @@ public class TeacherMenu implements DashboardMenu {
     }
 
     private void viewStudents() {
+
         try {
-            List<String> directory = userDAO.findStudentDirectoryFromView();
+
+            List<String> directory = userDAO.findStudentDirectoryFromView(
+                    teacher.getCollegeName(),
+                    teacher.getDepartment()
+            );
+
             System.out.println();
-            System.out.println("----- Student Directory (via vw_student_directory) -----");
+            System.out.println("------------ Student Directory ------------");
+            System.out.println("College    : " + teacher.getCollegeName());
+            System.out.println("Department : " + teacher.getDepartment());
+            System.out.println();
+
             if (directory.isEmpty()) {
                 System.out.println("No students found.");
                 return;
             }
+
             directory.forEach(System.out::println);
+
         } catch (SQLException e) {
             System.out.println("Could not load students: " + e.getMessage());
         }
     }
 
-    private void viewComplaintReport() {
-        try {
-            Map<String, Integer> summary = reportDAO.unresolvedComplaintsByHostelBlock();
-            System.out.println();
-            System.out.println("----- Unresolved Complaints by Hostel Block -----");
-            if (summary.isEmpty()) {
-                System.out.println("No unresolved complaints. All clear!");
-                return;
-            }
-            summary.forEach((block, count) -> System.out.println(block + ": " + count + " open"));
-        } catch (SQLException e) {
-            System.out.println("Could not generate report: " + e.getMessage());
-        }
-    }
 
     private void uploadResource() {
         try {
-            System.out.print("Enter title: ");
-            String title = scanner.nextLine().trim();
-            System.out.print("Enter type (PAPER/ASSIGNMENT/NOTES): ");
-            String type = scanner.nextLine().trim();
-            System.out.print("Enter subject: ");
-            String subject = scanner.nextLine().trim();
-            System.out.print("Enter target year (1-4): ");
-            int year = Integer.parseInt(scanner.nextLine().trim());
-            System.out.print("Enter description: ");
-            String description = scanner.nextLine().trim();
+            String title;
 
-            academicResourceDAO.upload(title, type, subject, year, teacher.getId(), description);
+            while (true) {
+                System.out.print("Enter title: ");
+                title = scanner.nextLine().trim();
+
+                if (!title.isEmpty())
+                    break;
+
+                System.out.println("Title cannot be empty.");
+            }
+            String type;
+
+            while (true) {
+
+                System.out.print("Enter type (PAPER/ASSIGNMENT/NOTES): ");
+
+                type = scanner.nextLine().trim().toUpperCase();
+
+                if (type.equals("PAPER")
+                        || type.equals("ASSIGNMENT")
+                        || type.equals("NOTES")) {
+                    break;
+                }
+
+                System.out.println("Invalid type. Enter PAPER, ASSIGNMENT or NOTES.");
+            }
+            String subject;
+
+            while (true) {
+
+                System.out.print("Enter subject: ");
+
+                subject = scanner.nextLine().trim();
+
+                if (!subject.isEmpty())
+                    break;
+
+                System.out.println("Subject cannot be empty.");
+            }
+            int targetYear;
+
+            while (true) {
+
+                System.out.print("Enter target year (1-4): ");
+
+                try {
+
+                    targetYear = Integer.parseInt(scanner.nextLine());
+
+                    if (targetYear >= 1 && targetYear <= 4)
+                        break;
+
+                    System.out.println("Year must be between 1 and 4.");
+
+                } catch (NumberFormatException e) {
+
+                    System.out.println("Please enter a valid number.");
+                }
+            }
+            String description;
+
+            while (true) {
+
+                System.out.print("Enter description: ");
+
+                description = scanner.nextLine().trim();
+
+                if (!description.isEmpty())
+                    break;
+
+                System.out.println("Description cannot be empty.");
+            }
+
+            academicResourceDAO.upload(
+                    title,
+                    type,
+                    subject,
+                    targetYear,
+                    teacher.getId(),
+                    description
+            );
+
             System.out.println("Resource uploaded!");
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid year.");
+
         } catch (SQLException e) {
             System.out.println("Database error: " + e.getMessage());
         }
@@ -161,17 +224,80 @@ public class TeacherMenu implements DashboardMenu {
 
     private void postAnnouncement() {
         try {
-            System.out.print("Enter title: ");
-            String title = scanner.nextLine().trim();
-            System.out.print("Enter message: ");
-            String message = scanner.nextLine().trim();
-            System.out.print("Target branch (leave blank for all): ");
-            String branch = scanner.nextLine().trim();
-            System.out.print("Target year (leave blank for all): ");
-            String yearInput = scanner.nextLine().trim();
+            String title;
 
-            Integer year = yearInput.isBlank() ? null : Integer.parseInt(yearInput);
-            String targetBranch = branch.isBlank() ? null : branch;
+            while (true) {
+                System.out.print("Enter title: ");
+                title = scanner.nextLine().trim();
+
+                if (!title.isEmpty())
+                    break;
+
+                System.out.println("Title cannot be empty.");
+            }
+
+            String message;
+
+            while (true) {
+                System.out.print("Enter message: ");
+                message = scanner.nextLine().trim();
+
+                if (!message.isEmpty())
+                    break;
+
+                System.out.println("Message cannot be empty.");
+            }
+            Integer year = null;
+
+            while (true) {
+
+                System.out.print("Target year (leave blank for all): ");
+                String yearInput = scanner.nextLine().trim();
+
+                if (yearInput.isBlank()) {
+                    break;
+                }
+
+                try {
+
+                    int y = Integer.parseInt(yearInput);
+
+                    if (y >= 1 && y <= 4) {
+                        year = y;
+                        break;
+                    }
+
+                    System.out.println("Year must be between 1 and 4.");
+
+                } catch (NumberFormatException e) {
+
+                    System.out.println("Please enter a valid number.");
+                }
+            }
+            String targetBranch = null;
+
+            while (true) {
+
+                System.out.print("Target branch (leave blank for all): ");
+                String branch = scanner.nextLine().trim().toUpperCase();
+
+                if (branch.isBlank()) {
+                    break;
+                }
+
+                if (branch.equals("CSE") ||
+                        branch.equals("IT") ||
+                        branch.equals("CE") ||
+                        branch.equals("ICT") ||
+                        branch.equals("CIVIL") ||
+                        branch.equals("MECHANICAL")) {
+
+                    targetBranch = branch;
+                    break;
+                }
+
+                System.out.println("Invalid branch.");
+            }
 
             announcementDAO.post(teacher.getId(), title, message, targetBranch, year);
             System.out.println("Announcement posted!");
@@ -184,30 +310,41 @@ public class TeacherMenu implements DashboardMenu {
 
     private void answerQuestions() {
         try {
-            // Queue demo (Java syllabus topic 6a): process unanswered questions strictly FIFO,
-            // oldest first - findUnanswered() already returns them oldest-first, so a Queue
-            // makes that ordering guarantee explicit in the type itself.
-            Queue<Question> pending = new LinkedList<>(questionDAO.findUnanswered());
+
+            Queue<Question> pending = new LinkedList<>(
+                    questionDAO.findUnanswered(
+                            teacher.getCollegeId(),
+                            teacher.getDepartment()
+                    )
+            );
 
             System.out.println();
             System.out.println("----- Unanswered Questions (oldest first) -----");
+
             if (pending.isEmpty()) {
                 System.out.println("No unanswered questions. All caught up!");
                 return;
             }
+
             for (Question q : pending) {
-                System.out.println(q.getId() + ". " + q.getTitle() + " - by " + q.getStudentName()
+                System.out.println(q.getId() + ". " + q.getTitle()
+                        + " - by " + q.getStudentName()
                         + " : " + q.getDescription());
             }
 
             System.out.print("Enter question ID to answer (0 to cancel): ");
             int id = Integer.parseInt(scanner.nextLine().trim());
-            if (id == 0) return;
+
+            if (id == 0)
+                return;
 
             System.out.print("Enter your reply: ");
             String reply = scanner.nextLine().trim();
+
             questionDAO.addReply(id, teacher.getId(), reply);
+
             pending.poll();
+
             System.out.println("Reply posted!");
 
         } catch (NumberFormatException e) {
@@ -217,33 +354,6 @@ public class TeacherMenu implements DashboardMenu {
         }
     }
 
-    private void resolveComplaint() {
-        try {
-            List<HostelComplaint> open = hostelComplaintDAO.findOpen();
-            System.out.println();
-            System.out.println("----- Open Hostel Complaints -----");
-            if (open.isEmpty()) {
-                System.out.println("No open complaints.");
-                return;
-            }
-            for (HostelComplaint c : open) {
-                System.out.println(c.getId() + ". [" + c.getStatus() + "] " + c.getCategory()
-                        + " - " + c.getDescription() + " (" + c.getStudentName() + ")");
-            }
-
-            System.out.print("Enter complaint ID to resolve (0 to cancel): ");
-            int id = Integer.parseInt(scanner.nextLine().trim());
-            if (id == 0) return;
-
-            hostelComplaintDAO.resolveComplaint(id);
-            System.out.println("Marked resolved - the student has been notified automatically.");
-
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid complaint ID.");
-        } catch (SQLException e) {
-            System.out.println("Database error: " + e.getMessage());
-        }
-    }
 
     private void basicAnalytics() {
         try {
@@ -252,11 +362,11 @@ public class TeacherMenu implements DashboardMenu {
 
             System.out.println();
             System.out.println("-- Overall Stats (COUNT/AVG/MAX/MIN/SUM) --");
-            analyticsDAO.getOverallStats().forEach((label, value) -> System.out.println(label + ": " + value));
+            analyticsDAO.getOverallStats(teacher.getCollegeId()).forEach((label, value) -> System.out.println(label + ": " + value));
 
             System.out.println();
             System.out.println("-- Popular Events (GROUP BY + HAVING) --");
-            List<String> popularEvents = analyticsDAO.getPopularEvents();
+            List<String> popularEvents = analyticsDAO.getPopularEvents(teacher.getCollegeId());
             if (popularEvents.isEmpty()) {
                 System.out.println("No events have registrations yet.");
             } else {
@@ -265,11 +375,11 @@ public class TeacherMenu implements DashboardMenu {
 
             System.out.println();
             System.out.println("-- Colleges & Student Counts (RIGHT JOIN) --");
-            analyticsDAO.getCollegesWithStudentCounts().forEach(System.out::println);
+            analyticsDAO.getCollegesWithStudentCounts(teacher.getCollegeId()).forEach(System.out::println);
 
             System.out.println();
             System.out.println("-- Students Needing Follow-up (UNION) --");
-            List<String> followUp = analyticsDAO.getStudentsNeedingFollowUp();
+            List<String> followUp = analyticsDAO.getStudentsNeedingFollowUp(teacher.getCollegeId());
             if (followUp.isEmpty()) {
                 System.out.println("Nobody needs follow-up right now.");
             } else {
@@ -278,7 +388,7 @@ public class TeacherMenu implements DashboardMenu {
 
             System.out.println();
             System.out.println("-- College/Teacher Full Overview (FULL JOIN emulation) --");
-            analyticsDAO.getCollegeTeacherFullOverview().forEach(System.out::println);
+            analyticsDAO.getCollegeTeacherFullOverview(teacher.getCollegeId()).forEach(System.out::println);
 
         } catch (SQLException e) {
             System.out.println("Could not generate analytics: " + e.getMessage());
@@ -290,9 +400,12 @@ public class TeacherMenu implements DashboardMenu {
             String path1 = campusnexus.util.ReportExportService.exportComplaintReport(
                     reportDAO.unresolvedComplaintsByHostelBlock());
             String path2 = campusnexus.util.ReportExportService.exportStudentDirectory(
-                    userDAO.findStudentDirectoryFromView());
+                    userDAO.findStudentDirectoryFromView(
+                            teacher.getCollegeName(),
+                            teacher.getDepartment()
+                    ));
             String path3 = campusnexus.util.ReportExportService.exportFollowUpList(
-                    analyticsDAO.getStudentsNeedingFollowUp());
+                    analyticsDAO.getStudentsNeedingFollowUp(teacher.getCollegeId()));
 
             System.out.println();
             System.out.println("Reports exported:");

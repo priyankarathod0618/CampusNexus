@@ -104,8 +104,10 @@ public class AdminMenu implements DashboardMenu {
             }
             College college = collegeDAO.findById(collegeId);
             String domain = college.getEmailDomain().trim();
+
             System.out.print("Enter college email: ");
             String email = scanner.nextLine().trim();
+
             while (!InputValidator.isValidEmail(email)
                     || !email.toLowerCase().endsWith("@" + domain.toLowerCase())) {
 
@@ -113,12 +115,37 @@ public class AdminMenu implements DashboardMenu {
                 System.out.print("Enter college email: ");
                 email = scanner.nextLine().trim();
             }
-
-            System.out.print("Enter phone number: ");
-            String phone = scanner.nextLine().trim();
-            while (!InputValidator.isValidPhone(phone)) {
-                System.out.print("Invalid phone number (10 digits). Enter phone number: ");
+            String phone;
+            while (true) {
+                System.out.print("Enter phone number: ");
                 phone = scanner.nextLine().trim();
+
+                if (phone.length() != 10) {
+                    System.out.println("Phone number must be exactly 10 digits.");
+                    continue;
+                }
+
+                boolean ok = true;
+                for (int i = 0; i < 10; i++) {
+                    char ch = phone.charAt(i);
+                    if (ch < '0' || ch > '9') {
+                        ok = false;
+                        break;
+                    }
+                }
+
+                if (!ok) {
+                    System.out.println("Phone number must contain only digits.");
+                    continue;
+                }
+
+                char first = phone.charAt(0);
+                if (first!='6' && first!='7' && first!='8' && first!='9') {
+                    System.out.println("Phone number must start with 6, 7, 8 or 9.");
+                    continue;
+                }
+
+                break;
             }
 
             System.out.print("Enter roll number: ");
@@ -130,11 +157,28 @@ public class AdminMenu implements DashboardMenu {
             }
 
             System.out.print("Enter branch: ");
-            String branch = scanner.nextLine().trim();
+            String branch="";
+            while(true){
+                System.out.println("Select Branch");
+                System.out.println("1. CSE");
+                System.out.println("2. IT");
+                System.out.println("3. CE");
+                System.out.println("4. Mechanical");
+                System.out.println("5. Civil");
+                System.out.print("Choice: ");
 
-            while (!InputValidator.isValidBranch(branch)) {
-                System.out.print("Invalid branch. Enter again: ");
-                branch = scanner.nextLine().trim();
+                switch(scanner.nextLine().trim()){
+                    case "1" -> { branch="CSE"; break; }
+                    case "2" -> { branch="IT"; break; }
+                    case "3" -> { branch="CE"; break; }
+                    case "4" -> { branch="Mechanical"; break; }
+                    case "5" -> { branch="Civil"; break; }
+                    default -> {
+                        System.out.println("Invalid choice.");
+                        continue;
+                    }
+                }
+                break;
             }
 
             System.out.print("Enter year: ");
@@ -145,12 +189,37 @@ public class AdminMenu implements DashboardMenu {
             }
             int year = Integer.parseInt(yearStr);
 
-            System.out.print("Enter hostel block: ");
-            String hostelBlock = scanner.nextLine().trim();
+            String hostelBlock="";
 
-            while (!InputValidator.isValidHostelBlock(hostelBlock)) {
-                System.out.print("Invalid hostel block. Enter again: ");
-                hostelBlock = scanner.nextLine().trim();
+            System.out.print("Do you stay in hostel? (Y/N): ");
+            String stay=scanner.nextLine().trim();
+
+            if(stay.equalsIgnoreCase("Y")){
+                System.out.println("1. College Hostel");
+                System.out.println("2. Private Hostel");
+                System.out.print("Choice: ");
+                String type=scanner.nextLine();
+
+                if(type.equals("1")){
+                    System.out.println("Select Block");
+                    System.out.println("1. A");
+                    System.out.println("2. B");
+                    System.out.println("3. C");
+                    System.out.println("4. D");
+                    System.out.print("Choice: ");
+
+                    switch(scanner.nextLine()){
+                        case "1" -> hostelBlock="A";
+                        case "2" -> hostelBlock="B";
+                        case "3" -> hostelBlock="C";
+                        case "4" -> hostelBlock="D";
+                        default -> hostelBlock="A";
+                    }
+                }else{
+                    hostelBlock="Private Hostel";
+                }
+            }else{
+                hostelBlock="Non-Hosteller";
             }
 
             adminService.addStudent(name, email, phone, collegeId, rollNumber, branch, year, hostelBlock);
@@ -159,7 +228,7 @@ public class AdminMenu implements DashboardMenu {
             System.out.println("Student account created successfully.");
             System.out.println("First-time password is the registered phone number.");
 
-            ActivityLogger.log("Admin added student: " + email);
+            ActivityLogger.log(loggedInAdmin.getCollegeId() + "|Admin added student: " + email);
 
         } catch (DuplicateEmailException | DuplicateRollNumberException e) {
             System.out.println(e.getMessage());
@@ -185,11 +254,38 @@ public class AdminMenu implements DashboardMenu {
                 email = scanner.nextLine().trim();
             }
 
-            System.out.print("Enter phone number: ");
-            String phone = scanner.nextLine().trim();
-            while (!InputValidator.isValidPhone(phone)) {
-                System.out.print("Invalid phone number (10 digits). Enter phone number: ");
+            String phone;
+
+            while (true) {
+                System.out.print("Enter phone number: ");
                 phone = scanner.nextLine().trim();
+
+                if (phone.length() != 10) {
+                    System.out.println("Phone number must be exactly 10 digits.");
+                    continue;
+                }
+
+                boolean valid = true;
+                for (int i = 0; i < phone.length(); i++) {
+                    char ch = phone.charAt(i);
+                    if (ch < '0' || ch > '9') {
+                        valid = false;
+                        break;
+                    }
+                }
+
+                if (!valid) {
+                    System.out.println("Phone number must contain only digits.");
+                    continue;
+                }
+
+                char first = phone.charAt(0);
+                if (first!='6' && first!='7' && first!='8' && first!='9') {
+                    System.out.println("Phone number must start with 6, 7, 8 or 9.");
+                    continue;
+                }
+
+                break;
             }
 
             System.out.print("Enter employee ID: ");
@@ -200,20 +296,115 @@ public class AdminMenu implements DashboardMenu {
                 employeeId = scanner.nextLine().trim();
             }
 
-            System.out.print("Enter department: ");
-            String department = scanner.nextLine().trim();
 
-            while (!InputValidator.isValidDepartment(department)) {
-                System.out.print("Invalid department. Enter again: ");
-                department = scanner.nextLine().trim();
+            String department = "";
+
+            while (true) {
+                System.out.println("Select Department");
+                System.out.println("1. CSE");
+                System.out.println("2. IT");
+                System.out.println("3. CE");
+                System.out.println("4. Mechanical");
+                System.out.println("5. Civil");
+                System.out.print("Choice: ");
+
+                switch (scanner.nextLine().trim()) {
+                    case "1" -> department = "CSE";
+                    case "2" -> department = "IT";
+                    case "3" -> department = "CE";
+                    case "4" -> department = "Mechanical";
+                    case "5" -> department = "Civil";
+                    default -> {
+                        System.out.println("Invalid choice.");
+                        continue;
+                    }
+                }
+                break;
             }
 
-            System.out.print("Enter subject: ");
-            String subject = scanner.nextLine().trim();
+            String subject = "";
 
-            while (!InputValidator.isValidSubject(subject)) {
-                System.out.print("Invalid subject. Enter again: ");
-                subject = scanner.nextLine().trim();
+            while (true) {
+
+                System.out.println("Select Subject");
+
+                switch (department) {
+                    case "CSE" -> {
+                        System.out.println("1. Java Programming");
+                        System.out.println("2. Data Structures");
+                        System.out.println("3. DBMS");
+                        System.out.println("4. Operating Systems");
+                        System.out.println("Enter your choice");
+
+                        switch (scanner.nextLine().trim()) {
+                            case "1" -> subject = "Java Programming";
+                            case "2" -> subject = "Data Structures";
+                            case "3" -> subject = "DBMS";
+                            case "4" -> subject = "Operating Systems";
+                            default -> {
+                                System.out.println("Invalid choice.");
+                                continue;
+                            }
+                        }
+                    }
+
+                    case "IT" -> {
+                        System.out.println("1. Python");
+                        System.out.println("2. Web Technology");
+                        System.out.println("3. Computer Networks");
+
+                        switch (scanner.nextLine().trim()) {
+                            case "1" -> subject = "Python";
+                            case "2" -> subject = "Web Technology";
+                            case "3" -> subject = "Computer Networks";
+                            default -> {
+                                System.out.println("Invalid choice.");
+                                continue;
+                            }
+                        }
+                    }
+
+                    case "CE" -> {
+                        System.out.println("1. Structural Engineering");
+                        System.out.println("2. Surveying");
+                        switch (scanner.nextLine().trim()) {
+                            case "1" -> subject = "Structural Engineering";
+                            case "2" -> subject = "Surveying";
+                            default -> {
+                                System.out.println("Invalid choice.");
+                                continue;
+                            }
+                        }
+                    }
+
+                    case "Mechanical" -> {
+                        System.out.println("1. Thermodynamics");
+                        System.out.println("2. Machine Design");
+                        switch (scanner.nextLine().trim()) {
+                            case "1" -> subject = "Thermodynamics";
+                            case "2" -> subject = "Machine Design";
+                            default -> {
+                                System.out.println("Invalid choice.");
+                                continue;
+                            }
+                        }
+                    }
+
+                    case "Civil" -> {
+                        System.out.println("1. Structural Analysis");
+                        System.out.println("2. Transportation Engineering");
+                        switch (scanner.nextLine().trim()) {
+                            case "1" -> subject = "Structural Analysis";
+                            case "2" -> subject = "Transportation Engineering";
+                            default -> {
+                                System.out.println("Invalid choice.");
+                                continue;
+                            }
+                        }
+                    }
+                }
+
+                break;
             }
             adminService.addTeacher(name, email, phone, collegeId, employeeId, department, subject);
 
@@ -221,7 +412,7 @@ public class AdminMenu implements DashboardMenu {
             System.out.println("Teacher account created successfully.");
             System.out.println("First-time password is the registered phone number.");
 
-            ActivityLogger.log("Admin added teacher: " + email);
+            ActivityLogger.log(loggedInAdmin.getCollegeId() + "|Admin added teacher: " + email);
 
         } catch (DuplicateEmailException e) {
             System.out.println(e.getMessage());

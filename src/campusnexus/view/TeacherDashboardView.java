@@ -90,10 +90,21 @@ public class TeacherDashboardView {
             try {
                 results.getItems().add(campusnexus.util.ReportExportService.exportComplaintReport(
                         reportDAO.unresolvedComplaintsByHostelBlock()));
-                results.getItems().add(campusnexus.util.ReportExportService.exportStudentDirectory(
-                        userDAO.findStudentDirectoryFromView()));
-                results.getItems().add(campusnexus.util.ReportExportService.exportFollowUpList(
-                        analyticsDAO.getStudentsNeedingFollowUp()));
+                results.getItems().add(
+                        campusnexus.util.ReportExportService.exportStudentDirectory(
+                                userDAO.findStudentDirectoryFromView(
+                                        teacher.getCollegeName(),
+                                        teacher.getDepartment()
+                                )
+                        )
+                );
+                results.getItems().add(
+                        campusnexus.util.ReportExportService.exportFollowUpList(
+                                analyticsDAO.getStudentsNeedingFollowUp(
+                                        teacher.getCollegeId()
+                                )
+                        )
+                );
             } catch (java.io.IOException ex) {
                 results.getItems().add("Could not write file: " + ex.getMessage());
             } catch (SQLException ex) {
@@ -118,18 +129,37 @@ public class TeacherDashboardView {
         try {
             VBox statsCard = Theme.card();
             statsCard.getChildren().add(Theme.sectionHeading("Overall Stats"));
-            analyticsDAO.getOverallStats().forEach((label, value) ->
+            analyticsDAO.getOverallStats(teacher.getCollegeId()).forEach((label, value) ->
                     statsCard.getChildren().add(new Label(label + ": " + value)));
             sections.getChildren().add(statsCard);
 
-            sections.getChildren().add(analyticsListCard("Popular Events (GROUP BY + HAVING)",
-                    analyticsDAO.getPopularEvents()));
-            sections.getChildren().add(analyticsListCard("Colleges & Student Counts (RIGHT JOIN)",
-                    analyticsDAO.getCollegesWithStudentCounts()));
-            sections.getChildren().add(analyticsListCard("Students Needing Follow-up (UNION)",
-                    analyticsDAO.getStudentsNeedingFollowUp()));
-            sections.getChildren().add(analyticsListCard("College/Teacher Full Overview (FULL JOIN emulation)",
-                    analyticsDAO.getCollegeTeacherFullOverview()));
+            sections.getChildren().add(
+                    analyticsListCard(
+                            "Popular Events (GROUP BY + HAVING)",
+                            analyticsDAO.getPopularEvents(teacher.getCollegeId())
+                    )
+            );
+
+            sections.getChildren().add(
+                    analyticsListCard(
+                            "College Student Count",
+                            analyticsDAO.getCollegesWithStudentCounts(teacher.getCollegeId())
+                    )
+            );
+
+            sections.getChildren().add(
+                    analyticsListCard(
+                            "Students Needing Follow-up (UNION)",
+                            analyticsDAO.getStudentsNeedingFollowUp(teacher.getCollegeId())
+                    )
+            );
+
+            sections.getChildren().add(
+                    analyticsListCard(
+                            "College Teacher Overview",
+                            analyticsDAO.getCollegeTeacherFullOverview(teacher.getCollegeId())
+                    )
+            );
 
         } catch (SQLException e) {
             sections.getChildren().add(new Label("Error loading analytics: " + e.getMessage()));
@@ -323,7 +353,12 @@ public class TeacherDashboardView {
 
         ListView<Question> list = new ListView<>();
         try {
-            list.getItems().addAll(questionDAO.findUnanswered());
+            list.getItems().addAll(
+                    questionDAO.findUnanswered(
+                            teacher.getCollegeId(),
+                            teacher.getDepartment()
+                    )
+            );
         } catch (SQLException e) {
             content.getChildren().add(new Label("Error: " + e.getMessage()));
         }

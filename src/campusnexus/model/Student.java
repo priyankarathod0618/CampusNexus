@@ -35,6 +35,7 @@ public class Student extends Person {
         return "STUDENT";
     }
 
+
     @Override
     public String getProfileDetails() {
         return "Name: " + name +
